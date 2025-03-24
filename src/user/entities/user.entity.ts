@@ -3,6 +3,7 @@ import { Exclude } from 'class-transformer';
 import { Location } from 'src/location/entities/location.entity';
 import { UserLocationLike } from './user-location-like.entity';
 import { Proposal } from 'src/proposal/entities/proposal.entity';
+import { UserLocationSave } from './user-location-save.entity';
 
 export enum Role {
   SUPER,
@@ -43,4 +44,7 @@ export class User {
 
   @OneToMany(() => UserLocationLike, (ull) => ull.location)
   likedLocations: UserLocationLike[];
+
+  @OneToMany(() => UserLocationSave, (save) => save.location)
+  savedLocations: UserLocationSave[];
 }
