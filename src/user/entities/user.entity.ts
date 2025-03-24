@@ -4,6 +4,7 @@ import { Location } from 'src/location/entities/location.entity';
 import { UserLocationLike } from './user-location-like.entity';
 import { Proposal } from 'src/proposal/entities/proposal.entity';
 import { UserLocationSave } from './user-location-save.entity';
+import { ProposalAgreement } from 'src/proposal/entities/proposal-agreement.entity';
 
 export enum Role {
   SUPER,
@@ -47,4 +48,10 @@ export class User {
 
   @OneToMany(() => UserLocationSave, (save) => save.location)
   savedLocations: UserLocationSave[];
+
+  @OneToMany(
+    () => ProposalAgreement,
+    (proposalAgreement) => proposalAgreement.proposal,
+  )
+  proposalAgreements: ProposalAgreement[];
 }
