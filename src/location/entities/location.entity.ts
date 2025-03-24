@@ -1,4 +1,5 @@
 import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
+import { UserLocationReport } from 'src/user/entities/user-location-report.entity';
 import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
@@ -43,4 +44,10 @@ export class Location {
 
   @OneToMany(() => UserLocationSave, (save) => save.user)
   savedUsers: UserLocationSave[];
+
+  @OneToMany(
+    () => UserLocationReport,
+    (userLocationReport) => userLocationReport.user,
+  )
+  reports: UserLocationReport[];
 }

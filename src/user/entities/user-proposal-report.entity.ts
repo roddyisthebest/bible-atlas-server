@@ -26,7 +26,7 @@ export class UserProposalReport {
     name: 'proposalId',
     type: 'int8',
   })
-  @ManyToOne(() => Proposal, (proposal) => proposal.proposalAgreements)
+  @ManyToOne(() => Proposal, (proposal) => proposal.reports)
   proposal: Proposal;
 
   @Column({ default: ReportType.FALSE_INFORMATION })
