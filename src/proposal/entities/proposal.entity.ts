@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from 'src/user/entities/user.entity';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum ProprosalType {
   CREATE,
@@ -31,4 +32,11 @@ export class Proposal {
 
   @Column()
   newLongitude: number;
+
+  @ManyToOne(() => User, (user) => user.id, {
+    cascade: true,
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  creator: User;
 }
