@@ -24,4 +24,11 @@ export class User {
 
   @Column({ enum: Role, default: Role.USER })
   role: Role;
+
+  @Column()
+  avatar: string;
+
+  @Column()
+  @Exclude({ toPlainOnly: true })
+  phoneToken: string;
 }
