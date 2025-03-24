@@ -1,6 +1,7 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Location } from 'src/location/entities/location.entity';
+import { UserLocationLike } from './user-location-like.entity';
 
 export enum Role {
   SUPER,
@@ -35,4 +36,7 @@ export class User {
 
   @OneToMany(() => Location, (location) => location.creator)
   locations: Location[];
+
+  @OneToMany(() => UserLocationLike, (ull) => ull.location)
+  likedLocations: UserLocationLike[];
 }

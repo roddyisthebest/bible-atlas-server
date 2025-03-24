@@ -1,8 +1,10 @@
+import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
@@ -34,4 +36,7 @@ export class Location {
     onDelete: 'CASCADE',
   })
   creator: User;
+
+  @OneToMany(() => UserLocationLike, (ull) => ull.user)
+  likedUsers: UserLocationLike[];
 }
