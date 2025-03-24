@@ -6,7 +6,7 @@ import { Proposal } from 'src/proposal/entities/proposal.entity';
 import { UserLocationSave } from './user-location-save.entity';
 import { ProposalAgreement } from 'src/proposal/entities/proposal-agreement.entity';
 import { UserProposalReport } from './user-proposal-report.entity';
-
+import { Notification } from 'src/notification/entities/notification.entity';
 export enum Role {
   SUPER,
   POWER_EXPERT,
@@ -43,6 +43,9 @@ export class User {
 
   @OneToMany(() => Proposal, (proposal) => proposal.creator)
   proposals: Proposal[];
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications: Notification[];
 
   @OneToMany(() => UserLocationLike, (ull) => ull.location)
   likedLocations: UserLocationLike[];
