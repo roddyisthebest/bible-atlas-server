@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ProposalAgreement } from './proposal-agreement.entity';
+import { UserProposalReport } from 'src/user/entities/user-proposal-report.entity';
 
 export enum ProprosalType {
   CREATE,
@@ -52,4 +53,10 @@ export class Proposal {
     (proposalAgreement) => proposalAgreement.user,
   )
   proposalAgreements: ProposalAgreement[];
+
+  @OneToMany(
+    () => UserProposalReport,
+    (userProposalReport) => userProposalReport.user,
+  )
+  reports: UserProposalReport[];
 }
