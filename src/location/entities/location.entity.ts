@@ -28,6 +28,10 @@ export class Location {
   @Column({ default: 0 })
   likeCount: number;
 
-  @ManyToOne(() => User, (user) => user.locations)
+  @ManyToOne(() => User, (user) => user.id, {
+    cascade: true,
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   creator: User;
 }
