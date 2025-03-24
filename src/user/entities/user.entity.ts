@@ -1,5 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { Location } from 'src/location/entities/location.entity';
 
 export enum Role {
   SUPER,
@@ -31,4 +32,7 @@ export class User {
   @Column()
   @Exclude({ toPlainOnly: true })
   phoneToken: string;
+
+  @OneToMany(() => Location, (location) => location.creator)
+  locations: Location[];
 }
