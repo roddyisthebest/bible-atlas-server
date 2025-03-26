@@ -12,6 +12,7 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { BasicToken } from './decorator/basic-token.decorator';
 import { Public } from './decorator/public.decorator';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -27,5 +28,11 @@ export class AuthController {
   @Post('login')
   login(@BasicToken() token: string) {
     return this.authService.login(token);
+  }
+
+  @Public()
+  @Post('refresh-token')
+  refreshAccessToken(@Body() { refreshToken }: RefreshTokenDto) {
+    return this.authService.refreshAccessToken(refreshToken);
   }
 }

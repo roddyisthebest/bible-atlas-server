@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -103,5 +107,36 @@ export class AuthService {
     const { email, password } = this.parseBasicToken(rawToken);
 
     return this.userSerice.create({ email, password });
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    try {
+      const payload = (await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get<string>(envVariables.refreshTokenSecret),
+      })) as {
+        sub: number;
+        role: Role;
+        type: 'refresh';
+      };
+
+      const user = { id: payload.sub, role: payload.role };
+
+      const accessToken = await this.issueToken(user, false);
+
+      return { accessToken };
+    } catch (e) {
+      switch (e.name) {
+        case 'TokenExpiredError':
+          throw new UnauthorizedException('리프레시 토큰이 만료되었습니다.');
+        case 'JsonWebTokenError':
+          throw new UnauthorizedException('토큰의 형식이 올바르지 않습니다.');
+        case 'NotBeforeError':
+          throw new UnauthorizedException(
+            '토큰이 아직 활성화 되지 않았습니다.',
+          );
+        default:
+          throw new UnauthorizedException('토큰을 확인할 수 없습니다.');
+      }
+    }
   }
 }
