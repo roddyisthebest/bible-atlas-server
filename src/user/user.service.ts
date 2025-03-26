@@ -20,13 +20,25 @@ export class UserService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, isSns: boolean = false) {
     const { email, password } = createUserDto;
 
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (user) {
-      throw new BadRequestException('이미 가입한 이메일 입니다.');
+      throw new BadRequestException('이미 가입된 계정입니다.');
+    }
+
+    if (isSns) {
+      const newSnsUser = this.userRepository.create({ email });
+      const newSavedSnsUser = await this.userRepository.save(newSnsUser);
+      return newSavedSnsUser;
+    }
+
+    const haveNoPassword = !password;
+
+    if (haveNoPassword) {
+      throw new BadRequestException('비밀번호를 입력해주세요.');
     }
 
     const hash = await bcrypt.hash(

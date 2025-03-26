@@ -13,6 +13,8 @@ import { ConfigService } from '@nestjs/config';
 import { envVariables } from 'src/common/const/env.const';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +24,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly userSerice: UserService,
+    private readonly httpService: HttpService,
   ) {}
 
   async authenticate(email: string, password: string) {
@@ -93,7 +96,7 @@ export class AuthService {
     const { email, password } = this.parseBasicToken(rawToken);
 
     const user = await this.authenticate(email, password);
-    console.log(user, 'user');
+
     const refreshToken = await this.issueToken(user, true);
     const accessToken = await this.issueToken(user, false);
 
@@ -138,5 +141,37 @@ export class AuthService {
           throw new UnauthorizedException('토큰을 확인할 수 없습니다.');
       }
     }
+  }
+
+  async getKakaoUserInfo(accessToken: string) {
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.get('https://kapi.kakao.com/v2/user/me', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+      );
+      return data;
+    } catch (e) {
+      throw new UnauthorizedException('카카오 토큰 인증에 실패했습니다.');
+    }
+  }
+
+  async verifyKakaoToken(kakaoAccessToken: string) {
+    const userInfo = await this.getKakaoUserInfo(kakaoAccessToken);
+    const email: string = userInfo?.kakao_account?.email;
+
+    if (!email) {
+      throw new BadRequestException('카카오 회원의 이메일 정보가 없습니다.');
+    }
+
+    const user = await this.userSerice.create({ email }, true);
+
+    const refreshToken = await this.issueToken(user, true);
+    const accessToken = await this.issueToken(user, false);
+
+    return {
+      refreshToken,
+      accessToken,
+    };
   }
 }

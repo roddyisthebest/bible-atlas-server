@@ -27,6 +27,7 @@ import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { AttatchUserMiddleware } from './auth/middleware/attatch-user.middleware';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { AttatchUserMiddleware } from './auth/middleware/attatch-user.middleware
     ProposalModule,
     NotificationModule,
     AuthModule,
+    // HttpModule,
   ],
   controllers: [],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],

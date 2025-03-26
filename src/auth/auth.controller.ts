@@ -1,18 +1,10 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+
 import { BasicToken } from './decorator/basic-token.decorator';
 import { Public } from './decorator/public.decorator';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { VerifyKakaoTokenDto } from './dto/verify-kakao-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -34,5 +26,11 @@ export class AuthController {
   @Post('refresh-token')
   refreshAccessToken(@Body() { refreshToken }: RefreshTokenDto) {
     return this.authService.refreshAccessToken(refreshToken);
+  }
+
+  @Public()
+  @Post('kakao-login')
+  async veriyKakaoToken(@Body() { accessToken }: VerifyKakaoTokenDto) {
+    return this.authService.verifyKakaoToken(accessToken);
   }
 }

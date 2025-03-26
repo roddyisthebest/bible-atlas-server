@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty } from 'class-validator';
 
-export class RefreshTokenDto {
+export class VerifyKakaoTokenDto {
   @IsString()
   @IsNotEmpty()
-  refreshToken: string;
+  accessToken: string;
 }
