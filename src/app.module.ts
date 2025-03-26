@@ -27,7 +27,6 @@ import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { AttatchUserMiddleware } from './auth/middleware/attatch-user.middleware';
-import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -44,6 +43,7 @@ import { HttpModule } from '@nestjs/axios';
         [envVariables.hasRounds]: Joi.number().required(),
         [envVariables.accessTokenSecret]: Joi.string().required(),
         [envVariables.refreshTokenSecret]: Joi.string().required(),
+        [envVariables.kakaoBaseUrl]: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRootAsync({

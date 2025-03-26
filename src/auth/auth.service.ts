@@ -145,8 +145,12 @@ export class AuthService {
 
   async getKakaoUserInfo(accessToken: string) {
     try {
+      const kakaoBaseUrl = this.configService.get<string>(
+        envVariables.kakaoBaseUrl,
+      ) as string;
+
       const { data } = await firstValueFrom(
-        this.httpService.get('https://kapi.kakao.com/v2/user/me', {
+        this.httpService.get(kakaoBaseUrl, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
       );

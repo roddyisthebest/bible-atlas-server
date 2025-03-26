@@ -8,6 +8,7 @@ const dbDatabase = 'DB_DATABASE';
 const hasRounds = 'HASH_ROUNDS';
 const accessTokenSecret = 'ACCESS_TOKEN_SECRET';
 const refreshTokenSecret = 'REFRESH_TOKEN_SECRET';
+const kakaoBaseUrl = 'KAKAO_BASE_URL';
 
 export const envVariables = {
   env,
@@ -20,4 +21,5 @@ export const envVariables = {
   hasRounds,
   accessTokenSecret,
   refreshTokenSecret,
+  kakaoBaseUrl,
 };
