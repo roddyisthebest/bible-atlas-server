@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { envVariables } from 'src/common/const/env.const';
 import { JwtService } from '@nestjs/jwt';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +17,7 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly userSerice: UserService,
   ) {}
 
   create(createAuthDto: CreateAuthDto) {
@@ -107,7 +109,7 @@ export class AuthService {
     const { email, password } = this.parseBasicToken(rawToken);
 
     const user = await this.authenticate(email, password);
-
+    console.log(user, 'user');
     const refreshToken = await this.issueToken(user, true);
     const accessToken = await this.issueToken(user, false);
 
@@ -115,5 +117,11 @@ export class AuthService {
       refreshToken,
       accessToken,
     };
+  }
+
+  async register(rawToken: string) {
+    const { email, password } = this.parseBasicToken(rawToken);
+
+    return this.userSerice.create({ email, password });
   }
 }

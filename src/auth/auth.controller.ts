@@ -16,6 +16,11 @@ import { BasicToken } from './decorator/basic-token.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Post('register')
+  registerUser(@BasicToken() token: string) {
+    return this.authService.register(token);
+  }
+
   @Post('login')
   login(@BasicToken() token: string) {
     return this.authService.login(token);
