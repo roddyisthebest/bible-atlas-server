@@ -54,18 +54,27 @@ export class UserService {
   }
 
   findAll() {
-    return `This action returns all user`;
+    return this.userRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: number) {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('존재하지 않는 사용자입니다!');
+    }
+
+    return user;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+  async remove(id: number) {
+    const user = await this.userRepository.findOne({ where: { id } });
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    if (!user) {
+      throw new NotFoundException('존재하지 않는 사용자입니다!');
+    }
+
+    await this.userRepository.delete({ id });
+    return id;
   }
 }

@@ -4,8 +4,7 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+
 import { UserModule } from './user/user.module';
 import { LocationModule } from './location/location.module';
 import { ProposalModule } from './proposal/proposal.module';
@@ -27,6 +26,7 @@ import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { AttatchUserMiddleware } from './auth/middleware/attatch-user.middleware';
+import { RoleGuard } from './auth/guard/role.guard';
 
 @Module({
   imports: [
@@ -75,10 +75,12 @@ import { AttatchUserMiddleware } from './auth/middleware/attatch-user.middleware
     ProposalModule,
     NotificationModule,
     AuthModule,
-    // HttpModule,
   ],
   controllers: [],
-  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: RoleGuard },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
