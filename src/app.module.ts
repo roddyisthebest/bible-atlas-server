@@ -15,32 +15,50 @@ import { UserLocationReport } from './user/entities/user-location-report.entity'
 import { UserLocationSave } from './user/entities/user-location-save.entity';
 import { UserProposalReport } from './user/entities/user-proposal-report.entity';
 import { User } from './user/entities/user.entity';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import * as Joi from 'joi';
+import { envVariables } from './common/const/env.const';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // 전체에서 사용 가능
+      validationSchema: Joi.object({
+        [envVariables.env]: Joi.string().valid('dev', 'prod').required(),
+        [envVariables.dbType]: Joi.string().valid('postgres').required(),
+        [envVariables.dbHost]: Joi.string().required(),
+        [envVariables.dbPort]: Joi.string().required(),
+        [envVariables.dbUsername]: Joi.string().required(),
+        [envVariables.dbPassword]: Joi.string().required(),
+        [envVariables.dbDatabase]: Joi.string().required(),
+        [envVariables.hasRounds]: Joi.number().required(),
+        [envVariables.accessTokenSecret]: Joi.string().required(),
+        [envVariables.refreshTokenSecret]: Joi.string().required(),
+      }),
     }),
-    TypeOrmModule.forRoot({
-      type: process.env.DB_TYPE as 'postgres',
-      host: process.env.DB_HOST,
-      port: +(process.env.DB_PORT as string),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [
-        ProposalAgreement,
-        Proposal,
-        Location,
-        Notification,
-        UserLocationLike,
-        UserLocationReport,
-        UserLocationSave,
-        UserProposalReport,
-        User,
-      ],
-      synchronize: process.env.ENV === 'dev' ? true : false,
+    TypeOrmModule.forRootAsync({
+      useFactory: (configService: ConfigService) => ({
+        type: configService.get<string>(envVariables.dbType) as 'postgres',
+        host: configService.get<string>(envVariables.dbHost),
+        port: +(configService.get<string>(envVariables.dbPort) as string),
+        username: configService.get<string>(envVariables.dbUsername),
+        password: configService.get<string>(envVariables.dbPassword),
+        database: configService.get<string>(envVariables.dbDatabase),
+        entities: [
+          ProposalAgreement,
+          Proposal,
+          Location,
+          Notification,
+          UserLocationLike,
+          UserLocationReport,
+          UserLocationSave,
+          UserProposalReport,
+          User,
+        ],
+        synchronize:
+          configService.get<string>(envVariables.env) === 'dev' ? true : false,
+      }),
+      inject: [ConfigService],
     }),
 
     UserModule,
