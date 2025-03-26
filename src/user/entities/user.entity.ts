@@ -1,4 +1,10 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  BeforeInsert,
+} from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Location } from 'src/location/entities/location.entity';
 import { UserLocationLike } from './user-location-like.entity';
@@ -8,6 +14,8 @@ import { ProposalAgreement } from 'src/proposal/entities/proposal-agreement.enti
 import { UserProposalReport } from './user-proposal-report.entity';
 import { Notification } from 'src/notification/entities/notification.entity';
 import { UserLocationReport } from './user-location-report.entity';
+import { v4 as uuidv4 } from 'uuid';
+
 export enum Role {
   SUPER,
   POWER_EXPERT,
@@ -25,17 +33,23 @@ export class User {
   })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Exclude({ toPlainOnly: true })
   password: string;
 
   @Column({ enum: Role, default: Role.USER })
   role: Role;
 
-  @Column()
+  @Column({ nullable: true })
   avatar: string;
 
-  @Column()
+  @BeforeInsert()
+  assignRandomAvatar() {
+    const seed = uuidv4();
+    this.avatar = `https://api.dicebear.com/9.x/dylan/svg?seed=${seed}`;
+  }
+
+  @Column({ nullable: true })
   @Exclude({ toPlainOnly: true })
   phoneToken: string;
 

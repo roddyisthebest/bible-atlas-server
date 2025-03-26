@@ -1,6 +1,10 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
+
 import { UserModule } from './user/user.module';
 import { LocationModule } from './location/location.module';
 import { ProposalModule } from './proposal/proposal.module';
@@ -18,6 +22,11 @@ import { User } from './user/entities/user.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { envVariables } from './common/const/env.const';
+import { AuthModule } from './auth/auth.module';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './auth/guard/auth.guard';
+import { AttatchUserMiddleware } from './auth/middleware/attatch-user.middleware';
+import { RoleGuard } from './auth/guard/role.guard';
 
 @Module({
   imports: [
@@ -34,6 +43,7 @@ import { envVariables } from './common/const/env.const';
         [envVariables.hasRounds]: Joi.number().required(),
         [envVariables.accessTokenSecret]: Joi.string().required(),
         [envVariables.refreshTokenSecret]: Joi.string().required(),
+        [envVariables.kakaoBaseUrl]: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -60,13 +70,32 @@ import { envVariables } from './common/const/env.const';
       }),
       inject: [ConfigService],
     }),
-
     UserModule,
     LocationModule,
     ProposalModule,
     NotificationModule,
+    AuthModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: RoleGuard },
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AttatchUserMiddleware)
+      .exclude(
+        {
+          path: 'auth/login',
+          method: RequestMethod.POST,
+        },
+        {
+          path: 'auth/register',
+          method: RequestMethod.POST,
+        },
+      )
+      .forRoutes('*');
+  }
+}

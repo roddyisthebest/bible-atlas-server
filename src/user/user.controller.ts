@@ -1,9 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { MinimumRole } from 'src/auth/decorator/minimun-role.decorator';
+import { Role } from './entities/user.entity';
 
 @Controller('user')
+@UseInterceptors(ClassSerializerInterceptor)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -12,23 +24,21 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  @MinimumRole(Role.SUPER)
   @Get()
   findAll() {
     return this.userService.findAll();
   }
 
+  @MinimumRole(Role.SUPER)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  findOne(@Param('id') id: number) {
+    return this.userService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
-  }
-
+  @MinimumRole(Role.SUPER)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  remove(@Param('id') id: number) {
+    return this.userService.remove(id);
   }
 }
