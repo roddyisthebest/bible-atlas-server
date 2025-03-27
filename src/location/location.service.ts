@@ -42,17 +42,23 @@ export class LocationService {
         },
       });
 
-      await qr.manager.delete(Proposal, {
+      await qr.manager.update(
+        Proposal,
+        { id: proposal.id },
+        { location: { id: newLocationId } },
+      );
+
+      await qr.manager.softDelete(Proposal, {
         id: proposalId,
       });
 
       await qr.commitTransaction();
 
-      const location = this.locationRepository.findOne({
+      const newLocation = this.locationRepository.findOne({
         where: { id: newLocationId },
       });
 
-      return location;
+      return newLocation;
     } catch (e) {
       await qr.rollbackTransaction();
       throw e;
@@ -125,11 +131,94 @@ export class LocationService {
     return location;
   }
 
-  update(id: number, updateLocationDto: UpdateLocationDto) {
-    return `This action updates a #${id} location`;
+  async update(proposalId: number) {
+    const qr = this.dataSource.createQueryRunner();
+
+    await qr.connect();
+    await qr.startTransaction();
+
+    try {
+      const proposal = await qr.manager.findOne(Proposal, {
+        where: { id: proposalId, type: ProprosalType.UPDATE },
+      });
+
+      if (!proposal) {
+        throw new NotFoundException('존재하지 않는 id 값의 수정 제안 입니다.');
+      }
+
+      const location = await qr.manager.findOne(Location, {
+        where: { id: proposal.location.id },
+      });
+
+      if (!proposal.location || !location) {
+        throw new NotFoundException('관련된 지역 데이터가 없습니다.');
+      }
+
+      await qr.manager.update(
+        Location,
+        { id: location.id },
+        {
+          name: proposal.newLocationName,
+          description: proposal.newLocationDescription,
+          latitude: proposal.newLatitude,
+          longitude: proposal.newLongitude,
+        },
+      );
+
+      await qr.manager.softDelete(Proposal, { id: proposal.id });
+      await qr.commitTransaction();
+
+      const updatedLocation = this.locationRepository.findOne({
+        where: { id: location.id },
+      });
+
+      return updatedLocation;
+    } catch (e) {
+      await qr.rollbackTransaction();
+      throw e;
+    } finally {
+      await qr.release();
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} location`;
+  async remove(proposalId: number) {
+    const qr = this.dataSource.createQueryRunner();
+
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      const proposal = await qr.manager.findOne(Proposal, {
+        where: { id: proposalId, type: ProprosalType.DELETE },
+      });
+
+      if (!proposal) {
+        throw new NotFoundException('존재하지 않는 id 값의 삭제 제안 입니다.');
+      }
+
+      const location = await qr.manager.findOne(Location, {
+        where: { id: proposal.location.id },
+      });
+
+      if (!proposal.location || !location) {
+        throw new NotFoundException('관련된 지역 데이터가 없습니다.');
+      }
+
+      await qr.manager.softDelete(Location, { id: location.id });
+      await qr.manager.softDelete(Proposal, { id: proposal.id });
+
+      await qr.commitTransaction();
+
+      const deletedLocation = this.locationRepository.findOne({
+        where: { id: location.id },
+        withDeleted: true,
+      });
+
+      return deletedLocation;
+    } catch (e) {
+      await qr.rollbackTransaction();
+      throw e;
+    } finally {
+      await qr.release();
+    }
   }
 }

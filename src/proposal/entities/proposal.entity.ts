@@ -2,6 +2,7 @@ import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -9,6 +10,7 @@ import {
 import { ProposalAgreement } from './proposal-agreement.entity';
 import { UserProposalReport } from 'src/user/entities/user-proposal-report.entity';
 import { BaseTableEntity } from 'src/common/entity/base-table.entity';
+import { Location } from 'src/location/entities/location.entity';
 
 export enum ProprosalType {
   CREATE,
@@ -63,4 +65,12 @@ export class Proposal extends BaseTableEntity {
     (userProposalReport) => userProposalReport.user,
   )
   reports: UserProposalReport[];
+
+  @JoinColumn({ name: 'locationId' })
+  @ManyToOne(() => Location, (location) => location.proposals, {
+    cascade: true,
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  location: Location;
 }

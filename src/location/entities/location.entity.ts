@@ -1,4 +1,5 @@
 import { BaseTableEntity } from 'src/common/entity/base-table.entity';
+import { Proposal } from 'src/proposal/entities/proposal.entity';
 import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
 import { UserLocationReport } from 'src/user/entities/user-location-report.entity';
 import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
@@ -51,4 +52,7 @@ export class Location extends BaseTableEntity {
     (userLocationReport) => userLocationReport.user,
   )
   reports: UserLocationReport[];
+
+  @OneToMany(() => Proposal, (proposal) => proposal.location)
+  proposals: Proposal[];
 }
