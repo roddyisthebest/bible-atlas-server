@@ -1,3 +1,4 @@
+import { BaseTableEntity } from 'src/common/entity/base-table.entity';
 import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
 import { UserLocationReport } from 'src/user/entities/user-location-report.entity';
 import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
@@ -13,7 +14,7 @@ import {
 
 @Entity()
 @Unique(['latitude', 'longitude'])
-export class Location {
+export class Location extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -24,10 +25,10 @@ export class Location {
   longitude: number;
 
   @Column()
-  title: string;
+  name: string;
 
   @Column()
-  content: string;
+  description: string;
 
   @Column({ default: 0 })
   likeCount: number;

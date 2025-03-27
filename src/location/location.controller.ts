@@ -8,10 +8,13 @@ import {
   Delete,
   UseInterceptors,
   ClassSerializerInterceptor,
+  Query,
 } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { FindAllDto } from './dto/find-all.dto';
+import { FindAllByCoordinateDto } from './dto/find-all-by-coordinate.dto';
 
 @Controller('location')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -24,8 +27,13 @@ export class LocationController {
   }
 
   @Get()
-  findAll() {
-    return this.locationService.findAll();
+  findAll(@Query() findAllDto: FindAllDto) {
+    return this.locationService.findAll(findAllDto);
+  }
+
+  @Get('within')
+  findAllByCoordinate(@Query() findAllByCoordinateDto: FindAllByCoordinateDto) {
+    return this.locationService.findAllByCoordinate(findAllByCoordinateDto);
   }
 
   @Get(':id')

@@ -15,6 +15,7 @@ import { UserProposalReport } from './user-proposal-report.entity';
 import { Notification } from 'src/notification/entities/notification.entity';
 import { UserLocationReport } from './user-location-report.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { BaseTableEntity } from 'src/common/entity/base-table.entity';
 
 export enum Role {
   SUPER,
@@ -24,7 +25,7 @@ export enum Role {
 }
 
 @Entity()
-export class User {
+export class User extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

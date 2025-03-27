@@ -2,9 +2,10 @@ import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
 import { User } from './user.entity';
 import { ReportType } from './user-proposal-report.entity';
 import { Location } from 'src/location/entities/location.entity';
+import { BaseTableEntity } from 'src/common/entity/base-table.entity';
 
 @Entity()
-export class UserLocationReport {
+export class UserLocationReport extends BaseTableEntity {
   @PrimaryColumn({
     name: 'userId',
     type: 'int8',

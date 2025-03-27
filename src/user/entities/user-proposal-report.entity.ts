@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
 import { User } from './user.entity';
 import { Proposal } from 'src/proposal/entities/proposal.entity';
+import { BaseTableEntity } from 'src/common/entity/base-table.entity';
 
 // TODO: 공통화 필요
 export enum ReportType {
@@ -14,7 +15,7 @@ export enum ReportType {
 }
 
 @Entity()
-export class UserProposalReport {
+export class UserProposalReport extends BaseTableEntity {
   @PrimaryColumn({
     name: 'userId',
     type: 'int8',

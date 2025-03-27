@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { ProposalAgreement } from './proposal-agreement.entity';
 import { UserProposalReport } from 'src/user/entities/user-proposal-report.entity';
+import { BaseTableEntity } from 'src/common/entity/base-table.entity';
 
 export enum ProprosalType {
   CREATE,
@@ -16,7 +17,7 @@ export enum ProprosalType {
 }
 
 @Entity()
-export class Proposal {
+export class Proposal extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

@@ -1,3 +1,4 @@
+import { BaseTableEntity } from 'src/common/entity/base-table.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -10,7 +11,7 @@ export enum NotificationType {
 }
 
 @Entity()
-export class Notification {
+export class Notification extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
