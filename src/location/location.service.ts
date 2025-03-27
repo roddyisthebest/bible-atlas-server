@@ -1,21 +1,64 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Location } from './entities/location.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindAllDto } from './dto/find-all.dto';
 import { FindAllByCoordinateDto } from './dto/find-all-by-coordinate.dto';
+import { Proposal, ProprosalType } from 'src/proposal/entities/proposal.entity';
 
 @Injectable()
 export class LocationService {
   constructor(
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
+    @InjectRepository(Proposal)
+    private readonly proposalRepository: Repository<Proposal>,
+    private readonly dataSource: DataSource,
   ) {}
 
-  create(createLocationDto: CreateLocationDto) {
-    return 'This action adds a new location';
+  async create(proposalId: number) {
+    const qr = this.dataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+
+    try {
+      const proposal = await qr.manager.findOne(Proposal, {
+        where: { id: proposalId, type: ProprosalType.CREATE },
+      });
+
+      if (!proposal) {
+        throw new NotFoundException('존재하지 않는 id 값의 생성 제안 입니다.');
+      }
+
+      const { id: newLocationId } = await qr.manager.save(Location, {
+        name: proposal.newLocationName,
+        description: proposal.newLocationDescription,
+        latitude: proposal.newLatitude,
+        longitude: proposal.newLongitude,
+        creator: {
+          id: proposal.creator.id,
+        },
+      });
+
+      await qr.manager.delete(Proposal, {
+        id: proposalId,
+      });
+
+      await qr.commitTransaction();
+
+      const location = this.locationRepository.findOne({
+        where: { id: newLocationId },
+      });
+
+      return location;
+    } catch (e) {
+      await qr.rollbackTransaction();
+      throw e;
+    } finally {
+      await qr.release();
+    }
   }
 
   async findAll({ page, limit, query }: FindAllDto) {

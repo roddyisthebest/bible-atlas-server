@@ -1,5 +1,12 @@
 import { User } from 'src/user/entities/user.entity';
-import { Column, Entity, IsNull, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  IsNull,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+} from 'typeorm';
 import { Proposal } from './proposal.entity';
 
 @Entity()
@@ -15,6 +22,7 @@ export class ProposalAgreement {
     name: 'proposalId',
     type: 'int8',
   })
+  @JoinColumn({ name: 'proposalId' })
   @ManyToOne(() => Proposal, (proposal) => proposal.proposalAgreements, {
     onDelete: 'CASCADE',
   })

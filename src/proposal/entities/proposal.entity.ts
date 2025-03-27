@@ -24,8 +24,11 @@ export class Proposal extends BaseTableEntity {
   @Column()
   type: ProprosalType;
 
-  @Column()
-  content: string;
+  @Column({ nullable: false })
+  newLocationName: string;
+
+  @Column({ nullable: false })
+  newLocationDescription: string;
 
   @Column()
   comment: string;
