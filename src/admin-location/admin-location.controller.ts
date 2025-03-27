@@ -30,15 +30,15 @@ export class AdminLocationController {
   @MinimumRole(Role.SUPER)
   @Patch(':id')
   update(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Body() updateAdminLocationDto: UpdateAdminLocationDto,
   ) {
-    return this.adminLocationService.update(+id, updateAdminLocationDto);
+    return this.adminLocationService.update(id, updateAdminLocationDto);
   }
 
   @MinimumRole(Role.SUPER)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.adminLocationService.remove(+id);
+  remove(@Param('id') id: number) {
+    return this.adminLocationService.remove(id);
   }
 }

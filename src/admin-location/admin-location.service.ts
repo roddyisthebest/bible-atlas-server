@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateAdminLocationDto } from './dto/create-admin-location.dto';
 import { UpdateAdminLocationDto } from './dto/update-admin-location.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -47,19 +51,31 @@ export class AdminLocationService {
     return newLocation;
   }
 
-  findAll() {
-    return `This action returns all adminLocation`;
+  async update(id: number, updateAdminLocationDto: UpdateAdminLocationDto) {
+    const location = await this.locationRepository.findOne({ where: { id } });
+
+    if (!location) {
+      throw new NotFoundException('존재하지 않는 id 값의 지역입니다.');
+    }
+
+    await this.locationRepository.update({ id }, { ...updateAdminLocationDto });
+
+    const updatedLocation = await this.locationRepository.findOne({
+      where: { id },
+    });
+
+    return updatedLocation;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} adminLocation`;
-  }
+  async remove(id: number) {
+    const location = await this.locationRepository.findOne({ where: { id } });
 
-  update(id: number, updateAdminLocationDto: UpdateAdminLocationDto) {
-    return `This action updates a #${id} adminLocation`;
-  }
+    if (!location) {
+      throw new NotFoundException('존재하지 않는 지역입니다!');
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} adminLocation`;
+    await this.locationRepository.delete({ id });
+
+    return id;
   }
 }
