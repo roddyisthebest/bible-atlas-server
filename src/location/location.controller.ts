@@ -15,6 +15,7 @@ import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { FindAllByCoordinateDto } from './dto/find-all-by-coordinate.dto';
+import { Public } from 'src/auth/decorator/public.decorator';
 
 @Controller('location')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -26,16 +27,19 @@ export class LocationController {
     return this.locationService.create(createLocationDto);
   }
 
+  @Public()
   @Get()
   findAll(@Query() findAllDto: FindAllDto) {
     return this.locationService.findAll(findAllDto);
   }
 
+  @Public()
   @Get('within')
   findAllByCoordinate(@Query() findAllByCoordinateDto: FindAllByCoordinateDto) {
     return this.locationService.findAllByCoordinate(findAllByCoordinateDto);
   }
 
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.locationService.findOne(id);
