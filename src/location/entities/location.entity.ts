@@ -18,10 +18,10 @@ export class Location extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 6 })
   latitude: number;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 6 })
   longitude: number;
 
   @Column()

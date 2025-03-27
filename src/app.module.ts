@@ -27,6 +27,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { AttatchUserMiddleware } from './auth/middleware/attatch-user.middleware';
 import { RoleGuard } from './auth/guard/role.guard';
+import { AdminLocationModule } from './admin-location/admin-location.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { RoleGuard } from './auth/guard/role.guard';
     ProposalModule,
     NotificationModule,
     AuthModule,
+    AdminLocationModule,
   ],
   controllers: [],
   providers: [
