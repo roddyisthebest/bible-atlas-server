@@ -2,6 +2,7 @@ import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -17,7 +18,7 @@ export enum ProprosalType {
   UPDATE,
   DELETE,
 }
-
+@Index('idx_proposal_updated_at', ['updatedAt'])
 @Entity()
 export class Proposal extends BaseTableEntity {
   @PrimaryGeneratedColumn()

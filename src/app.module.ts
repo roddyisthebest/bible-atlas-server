@@ -28,6 +28,8 @@ import { AuthGuard } from './auth/guard/auth.guard';
 import { AttatchUserMiddleware } from './auth/middleware/attatch-user.middleware';
 import { RoleGuard } from './auth/guard/role.guard';
 import { AdminLocationModule } from './admin-location/admin-location.module';
+import { CommonModule } from './common/common.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -45,6 +47,7 @@ import { AdminLocationModule } from './admin-location/admin-location.module';
         [envVariables.accessTokenSecret]: Joi.string().required(),
         [envVariables.refreshTokenSecret]: Joi.string().required(),
         [envVariables.kakaoBaseUrl]: Joi.string().required(),
+        [envVariables.syncProposalCountsCron]: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -77,6 +80,8 @@ import { AdminLocationModule } from './admin-location/admin-location.module';
     NotificationModule,
     AuthModule,
     AdminLocationModule,
+    CommonModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [],
   providers: [

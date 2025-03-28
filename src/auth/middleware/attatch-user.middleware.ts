@@ -36,6 +36,7 @@ export class AttatchUserMiddleware implements NestMiddleware {
         secret: this.configService.get<string>(envVariables.accessTokenSecret),
       });
 
+      // @ts-ignore
       req.user = payload;
       next();
     } catch (e) {
