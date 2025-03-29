@@ -9,7 +9,7 @@ export class CommonService {
     dto: PagePaginationDto,
   ) {
     const { page, limit } = dto;
-    const skip = (page - 1) * limit;
+    const skip = page * limit;
 
     qb.take(limit);
     qb.skip(skip);
