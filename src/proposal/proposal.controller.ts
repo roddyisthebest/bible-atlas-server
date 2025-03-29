@@ -7,6 +7,8 @@ import {
   Param,
   Delete,
   Query,
+  UseInterceptors,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { ProposalService } from './proposal.service';
 import { CreateProposalDto } from './dto/create-proposal.dto';
@@ -15,6 +17,7 @@ import { UserId } from 'src/common/decorator/user-id.decorator';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
 
 @Controller('proposal')
+@UseInterceptors(ClassSerializerInterceptor)
 export class ProposalController {
   constructor(private readonly proposalService: ProposalService) {}
 
@@ -32,8 +35,8 @@ export class ProposalController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.proposalService.findOne(+id);
+  findOne(@Param('id') id: number) {
+    return this.proposalService.findOne(id);
   }
 
   @Patch(':id')

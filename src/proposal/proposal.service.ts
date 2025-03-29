@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateProposalDto } from './dto/create-proposal.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -212,8 +216,17 @@ export class ProposalService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} proposal`;
+  async findOne(id: number) {
+    const proposal = await this.proposalRepository.findOne({
+      where: { id },
+      relations: ['creator', 'location'],
+    });
+
+    if (!proposal) {
+      throw new NotFoundException('존재하지 않은 제안입니다.');
+    }
+
+    return proposal;
   }
 
   update(id: number, updateProposalDto: UpdateProposalDto) {
