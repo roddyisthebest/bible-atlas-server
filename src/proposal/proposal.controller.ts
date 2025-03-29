@@ -6,11 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ProposalService } from './proposal.service';
 import { CreateProposalDto } from './dto/create-proposal.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
 import { UserId } from 'src/common/decorator/user-id.decorator';
+import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
 
 @Controller('proposal')
 export class ProposalController {
@@ -25,8 +27,8 @@ export class ProposalController {
   }
 
   @Get()
-  findAll() {
-    return this.proposalService.findAll();
+  findAll(@Query() findAllDto: PagePaginationDto) {
+    return this.proposalService.findAll(findAllDto);
   }
 
   @Get(':id')

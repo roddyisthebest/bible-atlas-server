@@ -5,6 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Proposal, ProposalType } from './entities/proposal.entity';
 import { Repository } from 'typeorm';
 import { Location } from 'src/location/entities/location.entity';
+import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
+import { CommonService } from 'src/common/common.service';
 
 @Injectable()
 export class ProposalService {
@@ -13,6 +15,7 @@ export class ProposalService {
     private readonly proposalRepository: Repository<Proposal>,
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
+    private readonly commonService: CommonService,
   ) {}
 
   create(createProposalDto: CreateProposalDto, creatorId: number) {
@@ -189,8 +192,24 @@ export class ProposalService {
     return newProposal;
   }
 
-  findAll() {
-    return `This action returns all proposal`;
+  async findAll(dto: PagePaginationDto) {
+    const { limit, page } = dto;
+
+    const qb = this.proposalRepository
+      .createQueryBuilder('proposal')
+      .leftJoinAndSelect('proposal.creator', 'user')
+      .leftJoinAndSelect('proposal.location', 'location');
+
+    this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
+
+    let [data, total] = await qb.getManyAndCount();
+
+    return {
+      total,
+      page,
+      limit,
+      data,
+    };
   }
 
   findOne(id: number) {
