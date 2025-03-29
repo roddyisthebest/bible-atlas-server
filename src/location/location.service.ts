@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindAllDto } from './dto/find-all.dto';
 import { FindAllByCoordinateDto } from './dto/find-all-by-coordinate.dto';
 import { Proposal, ProposalType } from 'src/proposal/entities/proposal.entity';
+import { CommonService } from 'src/common/common.service';
 
 @Injectable()
 export class LocationService {
@@ -16,6 +17,7 @@ export class LocationService {
     @InjectRepository(Proposal)
     private readonly proposalRepository: Repository<Proposal>,
     private readonly dataSource: DataSource,
+    private readonly commonService: CommonService,
   ) {}
 
   async create(proposalId: number) {
@@ -74,7 +76,7 @@ export class LocationService {
       qb.where('location.name ILIKE :query', { query: `%${query}%` });
     }
 
-    qb.skip(page * limit).take(limit);
+    this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
 
     qb.orderBy('location.createdAt', 'DESC');
 
