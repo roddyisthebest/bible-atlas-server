@@ -18,7 +18,7 @@ export enum ProposalType {
   UPDATE,
   DELETE,
 }
-@Index('idx_proposal_updated_at', ['updatedAt'])
+
 @Entity()
 export class Proposal extends BaseTableEntity {
   @PrimaryGeneratedColumn()

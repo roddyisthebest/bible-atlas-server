@@ -15,6 +15,7 @@ import { CreateProposalDto } from './dto/create-proposal.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
 import { UserId } from 'src/common/decorator/user-id.decorator';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
+import { ToggleAgreementDto } from './dto/toggle-agreement.dto';
 
 @Controller('proposal')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -51,5 +52,18 @@ export class ProposalController {
   @Delete(':id')
   remove(@Param('id') id: number, @UserId() userId: number) {
     return this.proposalService.remove(id, userId);
+  }
+
+  @Post(':id/agreement')
+  toggleProposalAgreement(
+    @Param('id') id: number,
+    @Body() toggleAgreementDto: ToggleAgreementDto,
+    @UserId() userId: number,
+  ) {
+    return this.proposalService.toggleProposalAgreement(
+      id,
+      userId,
+      toggleAgreementDto.isAgree,
+    );
   }
 }

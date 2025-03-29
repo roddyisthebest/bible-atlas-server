@@ -288,4 +288,59 @@ export class ProposalService {
 
     return deletedLocation;
   }
+
+  async toggleProposalAgreement(
+    proposalId: number,
+    userId: number,
+    isAgree: boolean,
+  ) {
+    const proposal = await this.proposalRepository.findOne({
+      where: { id: proposalId },
+      relations: ['creator'],
+    });
+
+    if (!proposal) {
+      throw new NotFoundException('존재하지 않은 제안입니다.');
+    }
+
+    const isCreator = proposal.creator.id === userId;
+
+    if (isCreator) {
+      throw new BadRequestException('작성자는 투표할 권한이 없습니다.');
+    }
+
+    const agreeRecord = await this.proposalAgreementRepository
+      .createQueryBuilder('pa')
+      .leftJoinAndSelect('pa.proposal', 'proposal')
+      .leftJoinAndSelect('pa.user', 'user')
+      .where('proposal.id = :proposalId', { proposalId })
+      .andWhere('user.id = :userId', { userId })
+      .getOne();
+
+    if (agreeRecord) {
+      if (isAgree === agreeRecord.isAgree) {
+        await this.proposalAgreementRepository.delete({
+          proposal,
+          user: { id: userId },
+        });
+
+        return { message: 'agreement가 삭제되었습니다.' };
+      } else {
+        await this.proposalAgreementRepository.update(
+          { proposal, user: { id: userId } },
+          { isAgree },
+        );
+
+        return { message: 'agreement가 수정되었습니다.', isAgree };
+      }
+    } else {
+      await this.proposalAgreementRepository.save({
+        proposal,
+        user: { id: userId },
+        isAgree,
+      });
+
+      return { message: 'agreement가 생성되었습니다.', isAgree };
+    }
+  }
 }
