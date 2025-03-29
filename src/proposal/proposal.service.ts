@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateProposalDto } from './dto/create-proposal.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
@@ -11,6 +12,7 @@ import { Repository } from 'typeorm';
 import { Location } from 'src/location/entities/location.entity';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
 import { CommonService } from 'src/common/common.service';
+import { ProposalAgreement } from './entities/proposal-agreement.entity';
 
 @Injectable()
 export class ProposalService {
@@ -20,6 +22,8 @@ export class ProposalService {
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
     private readonly commonService: CommonService,
+    @InjectRepository(ProposalAgreement)
+    private readonly proposalAgreementRepository: Repository<ProposalAgreement>,
   ) {}
 
   create(createProposalDto: CreateProposalDto, creatorId: number) {
@@ -229,11 +233,59 @@ export class ProposalService {
     return proposal;
   }
 
-  update(id: number, updateProposalDto: UpdateProposalDto) {
-    return `This action updates a #${id} proposal`;
+  async update(
+    id: number,
+    updateProposalDto: UpdateProposalDto,
+    userId: number,
+  ) {
+    const proposal = await this.proposalRepository.findOne({
+      where: { id },
+      relations: ['creator'],
+    });
+
+    if (!proposal) {
+      throw new NotFoundException('존재하지 않은 제안입니다.');
+    }
+
+    const isCreator = proposal.creator.id === userId;
+
+    if (!isCreator) {
+      throw new UnauthorizedException('권한이 없습니다.');
+    }
+
+    await this.proposalRepository.update({ id }, { ...updateProposalDto });
+
+    const updatedProposal = await this.proposalRepository.findOne({
+      where: { id },
+    });
+
+    return updatedProposal;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} proposal`;
+  async remove(id: number, userId: number) {
+    const proposal = await this.proposalRepository.findOne({
+      where: { id },
+      relations: ['creator'],
+    });
+
+    if (!proposal) {
+      throw new NotFoundException('존재하지 않은 제안입니다.');
+    }
+
+    const isCreator = proposal.creator.id === userId;
+
+    if (!isCreator) {
+      throw new UnauthorizedException('권한이 없습니다.');
+    }
+
+    await this.proposalRepository.softDelete({ id });
+    await this.proposalAgreementRepository.softDelete({ proposal: { id } });
+
+    const deletedLocation = this.proposalRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+
+    return deletedLocation;
   }
 }

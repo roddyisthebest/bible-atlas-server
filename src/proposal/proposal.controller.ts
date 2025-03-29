@@ -41,14 +41,15 @@ export class ProposalController {
 
   @Patch(':id')
   update(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Body() updateProposalDto: UpdateProposalDto,
+    @UserId() userId: number,
   ) {
-    return this.proposalService.update(+id, updateProposalDto);
+    return this.proposalService.update(id, updateProposalDto, userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.proposalService.remove(+id);
+  remove(@Param('id') id: number, @UserId() userId: number) {
+    return this.proposalService.remove(id, userId);
   }
 }

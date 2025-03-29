@@ -25,10 +25,7 @@ export class ProposalAgreement extends BaseTableEntity {
     name: 'proposalId',
     type: 'int8',
   })
-  @JoinColumn({ name: 'proposalId' })
-  @ManyToOne(() => Proposal, (proposal) => proposal.proposalAgreements, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => Proposal, (proposal) => proposal.proposalAgreements)
   proposal: Proposal;
 
   @Column({ default: true })
