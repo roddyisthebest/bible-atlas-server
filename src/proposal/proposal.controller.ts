@@ -1,15 +1,27 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ProposalService } from './proposal.service';
 import { CreateProposalDto } from './dto/create-proposal.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
+import { UserId } from 'src/common/decorator/user-id.decorator';
 
 @Controller('proposal')
 export class ProposalController {
   constructor(private readonly proposalService: ProposalService) {}
 
   @Post()
-  create(@Body() createProposalDto: CreateProposalDto) {
-    return this.proposalService.create(createProposalDto);
+  create(
+    @Body() createProposalDto: CreateProposalDto,
+    @UserId() creatorId: number,
+  ) {
+    return this.proposalService.create(createProposalDto, creatorId);
   }
 
   @Get()
@@ -23,7 +35,10 @@ export class ProposalController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProposalDto: UpdateProposalDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateProposalDto: UpdateProposalDto,
+  ) {
     return this.proposalService.update(+id, updateProposalDto);
   }
 

@@ -1,6 +1,17 @@
-import { ExecutionContext, createParamDecorator } from '@nestjs/common';
+import {
+  ExecutionContext,
+  UnauthorizedException,
+  createParamDecorator,
+} from '@nestjs/common';
 
 export const UserId = createParamDecorator((_, context: ExecutionContext) => {
   const req = context.switchToHttp().getRequest();
-  return req?.user?.sub;
+
+  const userId = req?.user?.sub;
+
+  if (!userId) {
+    throw new UnauthorizedException('잘못된 접근입니다.');
+  }
+
+  return userId;
 });

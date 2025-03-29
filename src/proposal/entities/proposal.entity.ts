@@ -13,7 +13,7 @@ import { UserProposalReport } from 'src/user/entities/user-proposal-report.entit
 import { BaseTableEntity } from 'src/common/entity/base-table.entity';
 import { Location } from 'src/location/entities/location.entity';
 
-export enum ProprosalType {
+export enum ProposalType {
   CREATE,
   UPDATE,
   DELETE,
@@ -25,15 +25,15 @@ export class Proposal extends BaseTableEntity {
   id: number;
 
   @Column()
-  type: ProprosalType;
+  type: ProposalType;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   newLocationName: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   newLocationDescription: string;
 
-  @Column()
+  @Column({ nullable: true })
   comment: string;
 
   @Column({ default: 0 })
@@ -42,10 +42,28 @@ export class Proposal extends BaseTableEntity {
   @Column({ default: 0 })
   disagreeCount: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 6,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+    nullable: true,
+  })
   newLatitude: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 6,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+    nullable: true,
+  })
   newLongitude: number;
 
   @ManyToOne(() => User, (user) => user.id, {

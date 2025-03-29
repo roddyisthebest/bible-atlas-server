@@ -19,10 +19,26 @@ export class Location extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 6 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 6,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
   latitude: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 6 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 6,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
   longitude: number;
 
   @Column()

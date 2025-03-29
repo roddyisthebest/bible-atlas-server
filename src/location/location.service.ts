@@ -6,7 +6,7 @@ import { Location } from './entities/location.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindAllDto } from './dto/find-all.dto';
 import { FindAllByCoordinateDto } from './dto/find-all-by-coordinate.dto';
-import { Proposal, ProprosalType } from 'src/proposal/entities/proposal.entity';
+import { Proposal, ProposalType } from 'src/proposal/entities/proposal.entity';
 
 @Injectable()
 export class LocationService {
@@ -25,7 +25,7 @@ export class LocationService {
 
     try {
       const proposal = await qr.manager.findOne(Proposal, {
-        where: { id: proposalId, type: ProprosalType.CREATE },
+        where: { id: proposalId, type: ProposalType.CREATE },
       });
 
       if (!proposal) {
@@ -139,7 +139,7 @@ export class LocationService {
 
     try {
       const proposal = await qr.manager.findOne(Proposal, {
-        where: { id: proposalId, type: ProprosalType.UPDATE },
+        where: { id: proposalId, type: ProposalType.UPDATE },
       });
 
       if (!proposal) {
@@ -188,7 +188,7 @@ export class LocationService {
     await qr.startTransaction();
     try {
       const proposal = await qr.manager.findOne(Proposal, {
-        where: { id: proposalId, type: ProprosalType.DELETE },
+        where: { id: proposalId, type: ProposalType.DELETE },
       });
 
       if (!proposal) {
