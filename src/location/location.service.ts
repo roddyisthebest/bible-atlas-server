@@ -8,6 +8,7 @@ import { FindAllDto } from './dto/find-all.dto';
 import { FindAllByCoordinateDto } from './dto/find-all-by-coordinate.dto';
 import { Proposal, ProposalType } from 'src/proposal/entities/proposal.entity';
 import { CommonService } from 'src/common/common.service';
+import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
 
 @Injectable()
 export class LocationService {
@@ -18,6 +19,8 @@ export class LocationService {
     private readonly proposalRepository: Repository<Proposal>,
     private readonly dataSource: DataSource,
     private readonly commonService: CommonService,
+    @InjectRepository(UserLocationLike)
+    private readonly userLocationLikeRepository: Repository<UserLocationLike>,
   ) {}
 
   async create(proposalId: number) {
@@ -222,5 +225,48 @@ export class LocationService {
     } finally {
       await qr.release();
     }
+  }
+
+  async likeLocation(id: number, userId: number) {
+    const location = await this.locationRepository.findOne({ where: { id } });
+
+    if (!location) {
+      throw new NotFoundException('존재하지 않은 지역입니다.');
+    }
+
+    // const likeRecord = await this.movieUserLikeRepository
+    // .createQueryBuilder('mul')
+    // .leftJoinAndSelect('mul.movie', 'movie')
+    // .leftJoinAndSelect('mul.user', 'user')
+    // .where('movie.id = :movieId', { movieId })
+    // .andWhere('user.id = :userId', { userId })
+    // .getOne();
+
+    const likeRecord = await this.userLocationLikeRepository
+      .createQueryBuilder('ull')
+      .leftJoinAndSelect('ull.user', 'user')
+      .leftJoinAndSelect('ull.location', 'location')
+      .where('user.id = :userId', { userId })
+      .andWhere('location.id = :locationId', { locationId: location.id })
+      .getOne();
+
+    const primaryKey = {
+      location,
+      user: { id: userId },
+    };
+
+    if (!likeRecord) {
+      const like = await this.userLocationLikeRepository.save({
+        ...primaryKey,
+      });
+
+      return { message: 'location liked', like };
+    }
+
+    const unLike = await this.userLocationLikeRepository.delete({
+      ...primaryKey,
+    });
+
+    return { message: 'location unLiked' };
   }
 }

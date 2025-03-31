@@ -5,11 +5,13 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
   Query,
+  Post,
 } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { FindAllDto } from './dto/find-all.dto';
 import { FindAllByCoordinateDto } from './dto/find-all-by-coordinate.dto';
 import { Public } from 'src/auth/decorator/public.decorator';
+import { UserId } from 'src/common/decorator/user-id.decorator';
 
 @Controller('location')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -32,5 +34,10 @@ export class LocationController {
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.locationService.findOne(id);
+  }
+
+  @Post(':id/like')
+  likeLocation(@Param('id') id: number, @UserId() userId: number) {
+    return this.locationService.likeLocation(id, userId);
   }
 }
