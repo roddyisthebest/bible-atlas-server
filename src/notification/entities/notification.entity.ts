@@ -26,7 +26,7 @@ export class Notification extends BaseTableEntity {
 
   @ManyToOne(() => User, (user) => user.id, {
     cascade: true,
-    nullable: false,
+    nullable: true,
     onDelete: 'CASCADE',
   })
   user: User;

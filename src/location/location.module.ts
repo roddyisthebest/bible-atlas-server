@@ -7,6 +7,7 @@ import { Proposal } from 'src/proposal/entities/proposal.entity';
 import { CommonModule } from 'src/common/common.module';
 import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
 import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
+import { UserLocationReport } from 'src/user/entities/user-location-report.entity';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
       Proposal,
       UserLocationLike,
       UserLocationSave,
+      UserLocationReport,
     ]),
     CommonModule,
   ],

@@ -9,6 +9,8 @@ import { Proposal, ProposalType } from 'src/proposal/entities/proposal.entity';
 import { CommonService } from 'src/common/common.service';
 import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
 import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
+import { CreateReportDto } from './dto/create-report.dto';
+import { UserLocationReport } from 'src/user/entities/user-location-report.entity';
 
 @Injectable()
 export class LocationService {
@@ -21,9 +23,10 @@ export class LocationService {
     private readonly commonService: CommonService,
     @InjectRepository(UserLocationLike)
     private readonly userLocationLikeRepository: Repository<UserLocationLike>,
-
     @InjectRepository(UserLocationSave)
     private readonly userLocationSaveRepository: Repository<UserLocationSave>,
+    @InjectRepository(UserLocationReport)
+    private readonly userLocationReportRepository: Repository<UserLocationReport>,
   ) {}
 
   async create(proposalId: number) {
@@ -298,5 +301,25 @@ export class LocationService {
     });
 
     return { message: 'location unsaved' };
+  }
+
+  async reportLocation(
+    id: number,
+    createReportDto: CreateReportDto,
+    userId: number,
+  ) {
+    const location = await this.locationRepository.findOne({ where: { id } });
+
+    if (!location) {
+      throw new NotFoundException('존재하지 않는 id 값의 지역입니다.');
+    }
+
+    const newReport = await this.userLocationReportRepository.save({
+      location,
+      user: { id: userId },
+      ...createReportDto,
+    });
+
+    return newReport;
   }
 }
