@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
+
 import { Repository } from 'typeorm';
 import { UserLocationReport } from 'src/user/entities/user-location-report.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindAllDto } from 'src/location/dto/find-all.dto';
 import { CommonService } from 'src/common/common.service';
+import { UserProposalReport } from 'src/user/entities/user-proposal-report.entity';
 
 @Injectable()
 export class ReportService {
@@ -13,11 +13,9 @@ export class ReportService {
     @InjectRepository(UserLocationReport)
     private readonly userLocationReportRepository: Repository<UserLocationReport>,
     private readonly commonService: CommonService,
+    @InjectRepository(UserProposalReport)
+    private readonly userProposalReportRepository: Repository<UserProposalReport>,
   ) {}
-
-  create(createReportDto: CreateReportDto) {
-    return 'This action adds a new report';
-  }
 
   async findLocationReports({ limit, page }: FindAllDto) {
     const qb = this.userLocationReportRepository.createQueryBuilder('ulr');
@@ -40,15 +38,22 @@ export class ReportService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} report`;
-  }
+  async findProposalReports({ limit, page }: FindAllDto) {
+    const qb = this.userProposalReportRepository.createQueryBuilder('upr');
+    this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
+    qb.orderBy('upr.createdAt', 'DESC');
+    qb.leftJoinAndSelect('upr.user', 'user').leftJoinAndSelect(
+      'upr.proposal',
+      'proposal',
+    );
 
-  update(id: number, updateReportDto: UpdateReportDto) {
-    return `This action updates a #${id} report`;
-  }
+    const [data, total] = await qb.getManyAndCount();
 
-  remove(id: number) {
-    return `This action removes a #${id} report`;
+    return {
+      total,
+      page,
+      limit,
+      data,
+    };
   }
 }
