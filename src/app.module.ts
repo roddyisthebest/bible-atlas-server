@@ -30,6 +30,7 @@ import { RoleGuard } from './auth/guard/role.guard';
 import { AdminLocationModule } from './admin-location/admin-location.module';
 import { CommonModule } from './common/common.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     AdminLocationModule,
     CommonModule,
     ScheduleModule.forRoot(),
+    ReportModule,
   ],
   controllers: [],
   providers: [
