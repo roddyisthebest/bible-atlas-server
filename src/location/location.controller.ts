@@ -1,34 +1,59 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+  Query,
+  Post,
+  Body,
+} from '@nestjs/common';
 import { LocationService } from './location.service';
-import { CreateLocationDto } from './dto/create-location.dto';
-import { UpdateLocationDto } from './dto/update-location.dto';
+import { FindAllDto } from './dto/find-all.dto';
+import { FindAllByCoordinateDto } from './dto/find-all-by-coordinate.dto';
+import { Public } from 'src/auth/decorator/public.decorator';
+import { UserId } from 'src/common/decorator/user-id.decorator';
+import { CreateLocationReportDto } from './dto/create-location-report.dto';
 
 @Controller('location')
+@UseInterceptors(ClassSerializerInterceptor)
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
 
-  @Post()
-  create(@Body() createLocationDto: CreateLocationDto) {
-    return this.locationService.create(createLocationDto);
-  }
-
+  @Public()
   @Get()
-  findAll() {
-    return this.locationService.findAll();
+  findAll(@Query() findAllDto: FindAllDto) {
+    return this.locationService.findAll(findAllDto);
   }
 
+  @Public()
+  @Get('within')
+  findAllByCoordinate(@Query() findAllByCoordinateDto: FindAllByCoordinateDto) {
+    return this.locationService.findAllByCoordinate(findAllByCoordinateDto);
+  }
+
+  @Public()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.locationService.findOne(+id);
+  findOne(@Param('id') id: number) {
+    return this.locationService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLocationDto: UpdateLocationDto) {
-    return this.locationService.update(+id, updateLocationDto);
+  @Post(':id/like')
+  likeLocation(@Param('id') id: number, @UserId() userId: number) {
+    return this.locationService.likeLocation(id, userId);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.locationService.remove(+id);
+  @Post(':id/save')
+  saveLocation(@Param('id') id: number, @UserId() userId: number) {
+    return this.locationService.saveLocation(id, userId);
+  }
+
+  @Post(':id/report')
+  reportLocation(
+    @Param('id') id: number,
+    @Body() createReportDto: CreateLocationReportDto,
+    @UserId() userId: number,
+  ) {
+    return this.locationService.reportLocation(id, createReportDto, userId);
   }
 }

@@ -1,3 +1,5 @@
+import { BaseTableEntity } from 'src/common/entity/base-table.entity';
+import { Proposal } from 'src/proposal/entities/proposal.entity';
 import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
 import { UserLocationReport } from 'src/user/entities/user-location-report.entity';
 import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
@@ -13,21 +15,37 @@ import {
 
 @Entity()
 @Unique(['latitude', 'longitude'])
-export class Location {
+export class Location extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 6,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
   latitude: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 6,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
   longitude: number;
 
   @Column()
-  title: string;
+  name: string;
 
   @Column()
-  content: string;
+  description: string;
 
   @Column({ default: 0 })
   likeCount: number;
@@ -50,4 +68,7 @@ export class Location {
     (userLocationReport) => userLocationReport.user,
   )
   reports: UserLocationReport[];
+
+  @OneToMany(() => Proposal, (proposal) => proposal.location)
+  proposals: Proposal[];
 }

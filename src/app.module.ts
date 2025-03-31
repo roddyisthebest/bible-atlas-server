@@ -27,6 +27,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { AttatchUserMiddleware } from './auth/middleware/attatch-user.middleware';
 import { RoleGuard } from './auth/guard/role.guard';
+import { AdminLocationModule } from './admin-location/admin-location.module';
+import { CommonModule } from './common/common.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -44,6 +48,7 @@ import { RoleGuard } from './auth/guard/role.guard';
         [envVariables.accessTokenSecret]: Joi.string().required(),
         [envVariables.refreshTokenSecret]: Joi.string().required(),
         [envVariables.kakaoBaseUrl]: Joi.string().required(),
+        [envVariables.syncProposalCountsCron]: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -75,6 +80,10 @@ import { RoleGuard } from './auth/guard/role.guard';
     ProposalModule,
     NotificationModule,
     AuthModule,
+    AdminLocationModule,
+    CommonModule,
+    ScheduleModule.forRoot(),
+    ReportModule,
   ],
   controllers: [],
   providers: [
@@ -94,6 +103,18 @@ export class AppModule implements NestModule {
         {
           path: 'auth/register',
           method: RequestMethod.POST,
+        },
+        {
+          path: 'location',
+          method: RequestMethod.GET,
+        },
+        {
+          path: 'location/within',
+          method: RequestMethod.GET,
+        },
+        {
+          path: 'location/:id',
+          method: RequestMethod.GET,
         },
       )
       .forRoutes('*');

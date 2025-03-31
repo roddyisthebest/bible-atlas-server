@@ -35,7 +35,8 @@ export class AttatchUserMiddleware implements NestMiddleware {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get<string>(envVariables.accessTokenSecret),
       });
-      console.log(payload);
+
+      // @ts-ignore
       req.user = payload;
       next();
     } catch (e) {

@@ -9,7 +9,7 @@ const hasRounds = 'HASH_ROUNDS';
 const accessTokenSecret = 'ACCESS_TOKEN_SECRET';
 const refreshTokenSecret = 'REFRESH_TOKEN_SECRET';
 const kakaoBaseUrl = 'KAKAO_BASE_URL';
-
+const syncProposalCountsCron = 'SYNC_PROPOSAL_COUNTS_CRON';
 export const envVariables = {
   env,
   dbType,
@@ -22,4 +22,5 @@ export const envVariables = {
   accessTokenSecret,
   refreshTokenSecret,
   kakaoBaseUrl,
+  syncProposalCountsCron,
 };
