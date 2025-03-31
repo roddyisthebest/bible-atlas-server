@@ -1,7 +1,7 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ReportType } from 'src/user/entities/user-proposal-report.entity';
 
-export class CreateReportDto {
+export class CreateLocationReportDto {
   @IsEnum(ReportType)
   @IsNotEmpty()
   type: ReportType;

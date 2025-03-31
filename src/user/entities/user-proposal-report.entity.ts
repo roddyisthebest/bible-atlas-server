@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './user.entity';
 import { Proposal } from 'src/proposal/entities/proposal.entity';
 import { BaseTableEntity } from 'src/common/entity/base-table.entity';
@@ -16,14 +16,17 @@ export enum ReportType {
 
 @Entity()
 export class UserProposalReport extends BaseTableEntity {
-  @PrimaryColumn({
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({
     name: 'userId',
     type: 'int8',
   })
   @ManyToOne(() => User, (user) => user.proposalReports)
   user: User;
 
-  @PrimaryColumn({
+  @Column({
     name: 'proposalId',
     type: 'int8',
   })
@@ -33,6 +36,6 @@ export class UserProposalReport extends BaseTableEntity {
   @Column({ default: ReportType.FALSE_INFORMATION })
   type: ReportType;
 
-  @Column()
+  @Column({ nullable: true })
   reason: string;
 }

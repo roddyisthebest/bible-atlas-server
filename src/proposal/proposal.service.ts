@@ -13,6 +13,8 @@ import { Location } from 'src/location/entities/location.entity';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { ProposalAgreement } from './entities/proposal-agreement.entity';
+import { UserProposalReport } from 'src/user/entities/user-proposal-report.entity';
+import { CreateProposalReportDto } from './dto/create-proposal-report.dto';
 
 @Injectable()
 export class ProposalService {
@@ -24,6 +26,8 @@ export class ProposalService {
     private readonly commonService: CommonService,
     @InjectRepository(ProposalAgreement)
     private readonly proposalAgreementRepository: Repository<ProposalAgreement>,
+    @InjectRepository(UserProposalReport)
+    private readonly userProposalReportRepository: Repository<UserProposalReport>,
   ) {}
 
   create(createProposalDto: CreateProposalDto, creatorId: number) {
@@ -342,5 +346,24 @@ export class ProposalService {
 
       return { message: 'agreement가 생성되었습니다.', isAgree };
     }
+  }
+  async reportProposal(
+    id: number,
+    createReportDto: CreateProposalReportDto,
+    userId: number,
+  ) {
+    const proposal = await this.proposalRepository.findOne({ where: { id } });
+
+    if (!proposal) {
+      throw new NotFoundException('존재하지 않는 id 값의 제안입니다.');
+    }
+
+    const newReport = await this.userProposalReportRepository.save({
+      proposal,
+      user: { id: userId },
+      ...createReportDto,
+    });
+
+    return newReport;
   }
 }

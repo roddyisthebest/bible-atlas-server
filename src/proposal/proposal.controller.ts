@@ -16,6 +16,7 @@ import { UpdateProposalDto } from './dto/update-proposal.dto';
 import { UserId } from 'src/common/decorator/user-id.decorator';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
 import { ToggleAgreementDto } from './dto/toggle-agreement.dto';
+import { CreateProposalReportDto } from './dto/create-proposal-report.dto';
 
 @Controller('proposal')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -65,5 +66,14 @@ export class ProposalController {
       userId,
       toggleAgreementDto.isAgree,
     );
+  }
+
+  @Post(':id/report')
+  reportProposal(
+    @Param('id') id: number,
+    @Body() createReportDto: CreateProposalReportDto,
+    @UserId() userId: number,
+  ) {
+    return this.proposalService.reportProposal(id, createReportDto, userId);
   }
 }

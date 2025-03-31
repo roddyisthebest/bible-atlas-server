@@ -9,8 +9,9 @@ import { Proposal, ProposalType } from 'src/proposal/entities/proposal.entity';
 import { CommonService } from 'src/common/common.service';
 import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
 import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
-import { CreateReportDto } from './dto/create-report.dto';
+
 import { UserLocationReport } from 'src/user/entities/user-location-report.entity';
+import { CreateLocationReportDto } from './dto/create-location-report.dto';
 
 @Injectable()
 export class LocationService {
@@ -305,7 +306,7 @@ export class LocationService {
 
   async reportLocation(
     id: number,
-    createReportDto: CreateReportDto,
+    createReportDto: CreateLocationReportDto,
     userId: number,
   ) {
     const location = await this.locationRepository.findOne({ where: { id } });

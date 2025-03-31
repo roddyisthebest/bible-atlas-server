@@ -13,7 +13,7 @@ import { FindAllDto } from './dto/find-all.dto';
 import { FindAllByCoordinateDto } from './dto/find-all-by-coordinate.dto';
 import { Public } from 'src/auth/decorator/public.decorator';
 import { UserId } from 'src/common/decorator/user-id.decorator';
-import { CreateReportDto } from './dto/create-report.dto';
+import { CreateLocationReportDto } from './dto/create-location-report.dto';
 
 @Controller('location')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -51,7 +51,7 @@ export class LocationController {
   @Post(':id/report')
   reportLocation(
     @Param('id') id: number,
-    @Body() createReportDto: CreateReportDto,
+    @Body() createReportDto: CreateLocationReportDto,
     @UserId() userId: number,
   ) {
     return this.locationService.reportLocation(id, createReportDto, userId);
