@@ -12,7 +12,7 @@ export class ReportController {
     return this.reportService.findLocationReports(findAllDto);
   }
 
-  @Get('location')
+  @Get('proposal')
   findProposalReports(@Query() findAllDto: FindAllDto) {
     return this.reportService.findProposalReports(findAllDto);
   }
