@@ -40,4 +40,9 @@ export class LocationController {
   likeLocation(@Param('id') id: number, @UserId() userId: number) {
     return this.locationService.likeLocation(id, userId);
   }
+
+  @Post(':id/save')
+  saveLocation(@Param('id') id: number, @UserId() userId: number) {
+    return this.locationService.saveLocation(id, userId);
+  }
 }

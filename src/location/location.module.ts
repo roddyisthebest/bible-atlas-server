@@ -6,10 +6,16 @@ import { Location } from './entities/location.entity';
 import { Proposal } from 'src/proposal/entities/proposal.entity';
 import { CommonModule } from 'src/common/common.module';
 import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
+import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Location, Proposal, UserLocationLike]),
+    TypeOrmModule.forFeature([
+      Location,
+      Proposal,
+      UserLocationLike,
+      UserLocationSave,
+    ]),
     CommonModule,
   ],
   controllers: [LocationController],

@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateLocationDto } from './dto/create-location.dto';
-import { UpdateLocationDto } from './dto/update-location.dto';
+
 import { DataSource, Repository } from 'typeorm';
 import { Location } from './entities/location.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +8,7 @@ import { FindAllByCoordinateDto } from './dto/find-all-by-coordinate.dto';
 import { Proposal, ProposalType } from 'src/proposal/entities/proposal.entity';
 import { CommonService } from 'src/common/common.service';
 import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
+import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
 
 @Injectable()
 export class LocationService {
@@ -21,6 +21,9 @@ export class LocationService {
     private readonly commonService: CommonService,
     @InjectRepository(UserLocationLike)
     private readonly userLocationLikeRepository: Repository<UserLocationLike>,
+
+    @InjectRepository(UserLocationSave)
+    private readonly userLocationSaveRepository: Repository<UserLocationSave>,
   ) {}
 
   async create(proposalId: number) {
@@ -234,14 +237,6 @@ export class LocationService {
       throw new NotFoundException('존재하지 않은 지역입니다.');
     }
 
-    // const likeRecord = await this.movieUserLikeRepository
-    // .createQueryBuilder('mul')
-    // .leftJoinAndSelect('mul.movie', 'movie')
-    // .leftJoinAndSelect('mul.user', 'user')
-    // .where('movie.id = :movieId', { movieId })
-    // .andWhere('user.id = :userId', { userId })
-    // .getOne();
-
     const likeRecord = await this.userLocationLikeRepository
       .createQueryBuilder('ull')
       .leftJoinAndSelect('ull.user', 'user')
@@ -263,10 +258,45 @@ export class LocationService {
       return { message: 'location liked', like };
     }
 
-    const unLike = await this.userLocationLikeRepository.delete({
+    await this.userLocationLikeRepository.delete({
       ...primaryKey,
     });
 
     return { message: 'location unLiked' };
+  }
+
+  async saveLocation(id: number, userId: number) {
+    const location = await this.locationRepository.findOne({ where: { id } });
+
+    if (!location) {
+      throw new NotFoundException('존재하지 않은 지역입니다.');
+    }
+
+    const saveRecord = await this.userLocationSaveRepository
+      .createQueryBuilder('uls')
+      .leftJoinAndSelect('uls.user', 'user')
+      .leftJoinAndSelect('uls.location', 'location')
+      .where('user.id = :userId', { userId })
+      .andWhere('location.id = :locationId', { locationId: location.id })
+      .getOne();
+
+    const primaryKey = {
+      location,
+      user: { id: userId },
+    };
+
+    if (!saveRecord) {
+      const save = await this.userLocationSaveRepository.save({
+        ...primaryKey,
+      });
+
+      return { message: 'location saved', save };
+    }
+
+    await this.userLocationSaveRepository.delete({
+      ...primaryKey,
+    });
+
+    return { message: 'location unsaved' };
   }
 }
