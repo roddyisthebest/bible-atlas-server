@@ -15,6 +15,7 @@ import { CommonService } from 'src/common/common.service';
 import { ProposalAgreement } from './entities/proposal-agreement.entity';
 import { UserProposalReport } from 'src/user/entities/user-proposal-report.entity';
 import { CreateProposalReportDto } from './dto/create-proposal-report.dto';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class ProposalService {
@@ -220,7 +221,7 @@ export class ProposalService {
       total,
       page,
       limit,
-      data,
+      data: instanceToPlain(data),
     };
   }
 

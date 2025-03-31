@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindAllDto } from 'src/location/dto/find-all.dto';
 import { CommonService } from 'src/common/common.service';
 import { UserProposalReport } from 'src/user/entities/user-proposal-report.entity';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class ReportService {
@@ -34,7 +35,7 @@ export class ReportService {
       total,
       page,
       limit,
-      data,
+      data: instanceToPlain(data),
     };
   }
 
@@ -53,7 +54,7 @@ export class ReportService {
       total,
       page,
       limit,
-      data,
+      data: instanceToPlain(data),
     };
   }
 }

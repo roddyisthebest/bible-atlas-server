@@ -15,6 +15,7 @@ import { CommonService } from 'src/common/common.service';
 import { UserLocationLike } from './entities/user-location-like.entity';
 import { FindAllDto } from 'src/location/dto/find-all.dto';
 import { UserLocationSave } from './entities/user-location-save.entity';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class UserService {
@@ -113,7 +114,7 @@ export class UserService {
       total,
       page,
       limit,
-      data: filteredData,
+      data: instanceToPlain(filteredData),
     };
   }
 
@@ -143,7 +144,7 @@ export class UserService {
       total,
       page,
       limit,
-      data: filteredData,
+      data: instanceToPlain(filteredData),
     };
   }
 }
