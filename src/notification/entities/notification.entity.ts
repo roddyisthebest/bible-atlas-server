@@ -8,6 +8,7 @@ export enum NotificationType {
   APPROVED,
   REJECTED,
   WARN,
+  PROPOSAL,
 }
 
 @Entity()
