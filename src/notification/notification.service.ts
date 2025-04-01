@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from './entities/notification.entity';
 import { Repository } from 'typeorm';
@@ -43,8 +42,16 @@ export class NotificationService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} notification`;
+  async findOne(id: number) {
+    const notification = await this.notificationRepository.findOne({
+      where: { id },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('존재하지 않는 id값의 알림입니다.');
+    }
+
+    return notification;
   }
 
   remove(id: number) {

@@ -7,13 +7,15 @@ import {
   Param,
   Delete,
   Query,
+  UseInterceptors,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
 
 @Controller('notification')
+@UseInterceptors(ClassSerializerInterceptor)
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
@@ -28,7 +30,7 @@ export class NotificationController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: number) {
     return this.notificationService.findOne(+id);
   }
 
