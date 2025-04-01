@@ -4,12 +4,16 @@ import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from './entities/notification.entity';
 import { Repository } from 'typeorm';
+import { CommonService } from 'src/common/common.service';
+import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class NotificationService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
+    private readonly commonService: CommonService,
   ) {}
 
   async create(createNotificationDto: CreateNotificationDto) {
@@ -20,16 +24,27 @@ export class NotificationService {
     return newNotification;
   }
 
-  findAll() {
-    return `This action returns all notification`;
+  async findAll(dto: PagePaginationDto) {
+    const { limit, page } = dto;
+
+    const qb = this.notificationRepository
+      .createQueryBuilder('noti')
+      .leftJoinAndSelect('noti.user', 'user');
+
+    this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
+
+    let [data, total] = await qb.getManyAndCount();
+
+    return {
+      total,
+      page,
+      limit,
+      data: instanceToPlain(data),
+    };
   }
 
   findOne(id: number) {
     return `This action returns a #${id} notification`;
-  }
-
-  update(id: number, updateNotificationDto: UpdateNotificationDto) {
-    return `This action updates a #${id} notification`;
   }
 
   remove(id: number) {
