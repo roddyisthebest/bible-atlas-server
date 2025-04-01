@@ -30,4 +30,7 @@ export class Notification extends BaseTableEntity {
     onDelete: 'CASCADE',
   })
   user: User;
+
+  @Column({ nullable: true })
+  redirectUrl: string;
 }
