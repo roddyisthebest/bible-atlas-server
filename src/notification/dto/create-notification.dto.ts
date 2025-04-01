@@ -22,7 +22,7 @@ export class CreateNotificationDto {
 
   @IsString()
   @IsOptional()
-  redirectUrl: string;
+  redirectUrl?: string;
 
   @IsNumber()
   @IsNotEmpty()
