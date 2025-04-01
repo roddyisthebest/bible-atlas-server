@@ -54,7 +54,17 @@ export class NotificationService {
     return notification;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} notification`;
+  async remove(id: number) {
+    const notification = await this.notificationRepository.findOne({
+      where: { id },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('존재하지 않는 id값의 알림입니다.');
+    }
+
+    await this.notificationRepository.delete({ id });
+
+    return id;
   }
 }

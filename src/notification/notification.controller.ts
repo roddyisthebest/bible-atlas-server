@@ -31,11 +31,11 @@ export class NotificationController {
 
   @Get(':id')
   findOne(@Param('id') id: number) {
-    return this.notificationService.findOne(+id);
+    return this.notificationService.findOne(id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.notificationService.remove(+id);
+  remove(@Param('id') id: number) {
+    return this.notificationService.remove(id);
   }
 }
