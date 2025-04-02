@@ -8,7 +8,7 @@ import { CreateProposalDto } from './dto/create-proposal.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Proposal, ProposalType } from './entities/proposal.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Location } from 'src/location/entities/location.entity';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
 import { CommonService } from 'src/common/common.service';
@@ -16,6 +16,8 @@ import { ProposalAgreement } from './entities/proposal-agreement.entity';
 import { UserProposalReport } from 'src/user/entities/user-proposal-report.entity';
 import { CreateProposalReportDto } from './dto/create-proposal-report.dto';
 import { instanceToPlain } from 'class-transformer';
+import { CreateNotificationDto } from 'src/notification/dto/create-notification.dto';
+import { NotificationType } from 'src/notification/entities/notification.entity';
 
 @Injectable()
 export class ProposalService {
@@ -29,6 +31,7 @@ export class ProposalService {
     private readonly proposalAgreementRepository: Repository<ProposalAgreement>,
     @InjectRepository(UserProposalReport)
     private readonly userProposalReportRepository: Repository<UserProposalReport>,
+    private readonly dataSource: DataSource,
   ) {}
 
   create(createProposalDto: CreateProposalDto, creatorId: number) {
@@ -123,46 +126,66 @@ export class ProposalService {
       locationId,
     } = createProposalDto;
 
-    const location = await this.locationRepository.findOne({
-      where: { id: locationId },
-    });
+    const qr = this.dataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
 
-    if (!location) {
-      throw new BadRequestException('존재하지 않는 위치 정보입니다.');
-    }
-
-    if (newLatitude && newLongitude) {
-      if (
-        location.longitude === newLongitude &&
-        location.latitude === newLatitude
-      ) {
-        throw new BadRequestException(
-          '위치정보가 같습니다. 다른 위치정보를 보내주세요.',
-        );
+    try {
+      const location = await qr.manager.findOne(Location, {
+        where: { id: locationId },
+      });
+      if (!location) {
+        throw new BadRequestException('존재하지 않는 위치 정보입니다.');
       }
+      if (newLatitude && newLongitude) {
+        if (
+          location.longitude === newLongitude &&
+          location.latitude === newLatitude
+        ) {
+          throw new BadRequestException(
+            '위치정보가 같습니다. 다른 위치정보를 보내주세요.',
+          );
+        }
+      }
+      const { id } = await qr.manager.save(Proposal, {
+        type: ProposalType.UPDATE,
+        newLocationName,
+        newLocationDescription,
+        newLatitude,
+        newLongitude,
+        comment,
+        location: {
+          id: locationId,
+        },
+        creator: {
+          id: creatorId,
+        },
+      });
+
+      const createNotificationDto: CreateNotificationDto = {
+        title: '수정 제안 생성',
+        content: `${location.name} 해당 지역에 대해 수정 제안이 생성되었습니다.`,
+        type: NotificationType.PROPOSAL,
+        userId: location.creator.id,
+        redirectUrl: `proposal/${id}`,
+      };
+
+      await qr.manager.save(Notification, createNotificationDto);
+
+      await qr.commitTransaction();
+
+      const newProposal = await this.proposalRepository.findOne({
+        where: { id },
+        relations: ['creator', 'location'],
+      });
+
+      return newProposal;
+    } catch (error) {
+      await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      await qr.release();
     }
-
-    const { id } = await this.proposalRepository.save({
-      type: ProposalType.UPDATE,
-      newLocationName,
-      newLocationDescription,
-      newLatitude,
-      newLongitude,
-      comment,
-      location: {
-        id: locationId,
-      },
-      creator: {
-        id: creatorId,
-      },
-    });
-
-    const newProposal = await this.proposalRepository.findOne({
-      where: { id },
-      relations: ['creator', 'location'],
-    });
-
-    return newProposal;
   }
 
   async createLocationDeletionProposal(
@@ -179,30 +202,53 @@ export class ProposalService {
 
     const { comment, locationId } = createProposalDto;
 
-    const location = await this.locationRepository.findOne({
-      where: { id: locationId },
-    });
+    const qr = this.dataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
 
-    if (!location) {
-      throw new BadRequestException('존재하지 않는 위치 정보입니다.');
+    try {
+      const location = await qr.manager.findOne(Location, {
+        where: { id: locationId },
+      });
+
+      if (!location) {
+        throw new BadRequestException('존재하지 않는 위치 정보입니다.');
+      }
+
+      const { id } = await qr.manager.save(Proposal, {
+        type: ProposalType.DELETE,
+        comment,
+        location: {
+          id: locationId,
+        },
+        creator: {
+          id: creatorId,
+        },
+      });
+
+      const createNotificationDto: CreateNotificationDto = {
+        title: '삭제 제안 생성',
+        content: `${location.name} 해당 지역에 대해 삭제 제안이 생성되었습니다.`,
+        type: NotificationType.PROPOSAL,
+        userId: location.creator.id,
+        redirectUrl: `proposal/${id}`,
+      };
+
+      await qr.manager.save(Notification, createNotificationDto);
+
+      await qr.commitTransaction();
+
+      const newProposal = await this.proposalRepository.findOne({
+        where: { id },
+      });
+
+      return newProposal;
+    } catch (error) {
+      await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      await qr.release();
     }
-
-    const { id } = await this.proposalRepository.save({
-      type: ProposalType.DELETE,
-      comment,
-      location: {
-        id: locationId,
-      },
-      creator: {
-        id: creatorId,
-      },
-    });
-
-    const newProposal = await this.proposalRepository.findOne({
-      where: { id },
-    });
-
-    return newProposal;
   }
 
   async findAll(dto: PagePaginationDto) {
@@ -348,6 +394,7 @@ export class ProposalService {
       return { message: 'agreement가 생성되었습니다.', isAgree };
     }
   }
+
   async reportProposal(
     id: number,
     createReportDto: CreateProposalReportDto,

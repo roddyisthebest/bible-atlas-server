@@ -8,6 +8,7 @@ export enum NotificationType {
   APPROVED,
   REJECTED,
   WARN,
+  PROPOSAL,
 }
 
 @Entity()
@@ -30,4 +31,7 @@ export class Notification extends BaseTableEntity {
     onDelete: 'CASCADE',
   })
   user: User;
+
+  @Column({ nullable: true })
+  redirectUrl: string;
 }

@@ -12,14 +12,17 @@ import { UserLocationSave } from 'src/user/entities/user-location-save.entity';
 
 import { UserLocationReport } from 'src/user/entities/user-location-report.entity';
 import { CreateLocationReportDto } from './dto/create-location-report.dto';
+import { CreateNotificationDto } from 'src/notification/dto/create-notification.dto';
+import {
+  Notification,
+  NotificationType,
+} from 'src/notification/entities/notification.entity';
 
 @Injectable()
 export class LocationService {
   constructor(
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
-    @InjectRepository(Proposal)
-    private readonly proposalRepository: Repository<Proposal>,
     private readonly dataSource: DataSource,
     private readonly commonService: CommonService,
     @InjectRepository(UserLocationLike)
@@ -53,6 +56,16 @@ export class LocationService {
           id: proposal.creator.id,
         },
       });
+
+      const createNotificationDto: CreateNotificationDto = {
+        title: '생성 제안 승인',
+        content: '생성 제안 승인 완료! 새로운 지역이 생성되었어요.',
+        type: NotificationType.APPROVED,
+        userId: proposal.creator.id,
+        redirectUrl: `location/${newLocationId}`,
+      };
+
+      await qr.manager.save(Notification, createNotificationDto);
 
       await qr.manager.update(
         Proposal,
@@ -176,6 +189,24 @@ export class LocationService {
           longitude: proposal.newLongitude,
         },
       );
+      const notifications: CreateNotificationDto[] = [
+        {
+          title: '수정 제안 승인',
+          content: `수정 제안 승인 완료! 지역 ${location.name}의 정보가 수정되었습니다.`,
+          type: NotificationType.APPROVED,
+          userId: proposal.creator.id,
+          redirectUrl: `location/${location.id}`,
+        },
+        {
+          title: '수정 제안 승인',
+          content: `수정 제안 승인 완료! 지역 ${location.name}의 정보가 수정되었습니다.`,
+          type: NotificationType.APPROVED,
+          userId: location.creator.id,
+          redirectUrl: `location/${location.id}`,
+        },
+      ];
+
+      await qr.manager.save(Notification, notifications);
 
       await qr.manager.softDelete(Proposal, { id: proposal.id });
       await qr.commitTransaction();
@@ -217,6 +248,23 @@ export class LocationService {
 
       await qr.manager.softDelete(Location, { id: location.id });
       await qr.manager.softDelete(Proposal, { id: proposal.id });
+
+      const notifications: CreateNotificationDto[] = [
+        {
+          title: '삭제 제안 승인',
+          content: `삭제 제안 승인 완료! 지역 ${location.name}의 정보가 삭제되었습니다.`,
+          type: NotificationType.APPROVED,
+          userId: proposal.creator.id,
+        },
+        {
+          title: '삭제 제안 승인',
+          content: `삭제 제안 승인 완료! 지역 ${location.name}의 정보가 삭제되었습니다.`,
+          type: NotificationType.APPROVED,
+          userId: location.creator.id,
+        },
+      ];
+
+      await qr.manager.save(Notification, notifications);
 
       await qr.commitTransaction();
 

@@ -6,8 +6,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Proposal } from 'src/proposal/entities/proposal.entity';
 import { UserLocationLike } from 'src/user/entities/user-location-like.entity';
 
+import { Notification } from 'src/notification/entities/notification.entity';
+import { User } from 'src/user/entities/user.entity';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Proposal, UserLocationLike])],
+  imports: [
+    TypeOrmModule.forFeature([Proposal, UserLocationLike, Notification, User]),
+  ],
   controllers: [CommonController],
   providers: [CommonService, TaskService],
   exports: [CommonService],
