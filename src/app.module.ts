@@ -31,6 +31,9 @@ import { AdminLocationModule } from './admin-location/admin-location.module';
 import { CommonModule } from './common/common.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReportModule } from './report/report.module';
+import { PlaceModule } from './place/place.module';
+import { Place } from './place/entities/place.entity';
+import { PlaceRelation } from './place/entities/place-relation.entity';
 
 @Module({
   imports: [
@@ -69,6 +72,8 @@ import { ReportModule } from './report/report.module';
           UserLocationSave,
           UserProposalReport,
           User,
+          Place,
+          PlaceRelation,
         ],
         synchronize:
           configService.get<string>(envVariables.env) === 'dev' ? true : false,
@@ -84,6 +89,7 @@ import { ReportModule } from './report/report.module';
     CommonModule,
     ScheduleModule.forRoot(),
     ReportModule,
+    PlaceModule,
   ],
   controllers: [],
   providers: [
