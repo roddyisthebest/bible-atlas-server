@@ -26,6 +26,9 @@ import { ReportModule } from './report/report.module';
 import { PlaceModule } from './place/place.module';
 import { Place } from './place/entities/place.entity';
 import { PlaceRelation } from './place/entities/place-relation.entity';
+import { PlaceTypeModule } from './place-type/place-type.module';
+import { PlacePlaceType } from './place/entities/place-place-type.entity';
+import { PlaceType } from './place-type/entities/place-type.entity';
 
 @Module({
   imports: [
@@ -54,7 +57,15 @@ import { PlaceRelation } from './place/entities/place-relation.entity';
         username: configService.get<string>(envVariables.dbUsername),
         password: configService.get<string>(envVariables.dbPassword),
         database: configService.get<string>(envVariables.dbDatabase),
-        entities: [Proposal, Notification, User, Place, PlaceRelation],
+        entities: [
+          Proposal,
+          Notification,
+          User,
+          Place,
+          PlaceRelation,
+          PlaceType,
+          PlacePlaceType,
+        ],
         synchronize:
           configService.get<string>(envVariables.env) === 'dev' ? true : false,
       }),
@@ -68,6 +79,7 @@ import { PlaceRelation } from './place/entities/place-relation.entity';
     ScheduleModule.forRoot(),
     ReportModule,
     PlaceModule,
+    PlaceTypeModule,
   ],
   controllers: [],
   providers: [

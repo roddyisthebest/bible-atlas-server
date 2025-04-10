@@ -8,6 +8,8 @@ import {
 import { PlaceRelation } from './place-relation.entity';
 import { PlaceStereo } from '../const/place.const';
 import { Proposal } from 'src/proposal/entities/proposal.entity';
+import { PlacePlaceType } from './place-place-type.entity';
+import { PlaceType } from 'src/place-type/entities/place-type.entity';
 
 @Unique(['name', 'isModern'])
 @Entity()
@@ -38,4 +40,7 @@ export class Place {
 
   @OneToMany(() => PlaceRelation, (relation) => relation.child)
   parentRelations: PlaceRelation[];
+
+  @OneToMany(() => PlacePlaceType, (ppt) => ppt.place)
+  types: PlaceType[];
 }
