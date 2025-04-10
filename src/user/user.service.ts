@@ -12,9 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { envVariables } from 'src/common/const/env.const';
 import { CommonService } from 'src/common/common.service';
-import { UserLocationLike } from './entities/user-location-like.entity';
-import { FindAllDto } from 'src/location/dto/find-all.dto';
-import { UserLocationSave } from './entities/user-location-save.entity';
+
 import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
@@ -24,10 +22,6 @@ export class UserService {
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
     private readonly commonService: CommonService,
-    @InjectRepository(UserLocationLike)
-    private readonly userLocationLikeRepository: Repository<UserLocationLike>,
-    @InjectRepository(UserLocationSave)
-    private readonly userLocationSaveRepository: Repository<UserLocationSave>,
   ) {}
 
   async create(createUserDto: CreateUserDto, isSns: boolean = false) {
@@ -86,65 +80,5 @@ export class UserService {
 
     await this.userRepository.delete({ id });
     return id;
-  }
-
-  async getMySavedLocations(
-    { page, limit, query }: FindAllDto,
-    userId: number,
-  ) {
-    const qb = this.userLocationSaveRepository
-      .createQueryBuilder('uls')
-      .leftJoinAndSelect('uls.user', 'user')
-      .leftJoinAndSelect('uls.location', 'location')
-      .where('user.id = :userId', { userId });
-
-    if (query) {
-      qb.where('location.name ILIKE :query', { query: `%${query}%` });
-    }
-
-    this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
-
-    qb.orderBy('location.createdAt', 'DESC');
-
-    const [data, total] = await qb.getManyAndCount();
-
-    const filteredData = data.map((d) => d.location);
-
-    return {
-      total,
-      page,
-      limit,
-      data: instanceToPlain(filteredData),
-    };
-  }
-
-  async getMyLikedLocations(
-    { page, limit, query }: FindAllDto,
-    userId: number,
-  ) {
-    const qb = this.userLocationLikeRepository
-      .createQueryBuilder('ull')
-      .leftJoinAndSelect('ull.user', 'user')
-      .leftJoinAndSelect('ull.location', 'location')
-      .where('user.id = :userId', { userId });
-
-    if (query) {
-      qb.where('location.name ILIKE :query', { query: `%${query}%` });
-    }
-
-    this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
-
-    qb.orderBy('location.createdAt', 'DESC');
-
-    const [data, total] = await qb.getManyAndCount();
-
-    const filteredData = data.map((d) => d.location);
-
-    return {
-      total,
-      page,
-      limit,
-      data: instanceToPlain(filteredData),
-    };
   }
 }

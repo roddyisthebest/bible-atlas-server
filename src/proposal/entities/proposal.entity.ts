@@ -2,16 +2,13 @@ import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   Entity,
-  Index,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ProposalAgreement } from './proposal-agreement.entity';
-import { UserProposalReport } from 'src/user/entities/user-proposal-report.entity';
+
 import { BaseTableEntity } from 'src/common/entity/base-table.entity';
-import { Location } from 'src/location/entities/location.entity';
+
 import { Place } from 'src/place/entities/place.entity';
 
 export enum ProposalType {
