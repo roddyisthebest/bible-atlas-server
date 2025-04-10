@@ -23,7 +23,7 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly userSerice: UserService,
+    private readonly userService: UserService,
     private readonly httpService: HttpService,
   ) {}
 
@@ -109,7 +109,7 @@ export class AuthService {
   async register(rawToken: string) {
     const { email, password } = this.parseBasicToken(rawToken);
 
-    return this.userSerice.create({ email, password });
+    return this.userService.create({ email, password });
   }
 
   async refreshAccessToken(refreshToken: string) {
@@ -168,7 +168,7 @@ export class AuthService {
       throw new BadRequestException('카카오 회원의 이메일 정보가 없습니다.');
     }
 
-    const user = await this.userSerice.create({ email }, true);
+    const user = await this.userService.create({ email }, true);
 
     const refreshToken = await this.issueToken(user, true);
     const accessToken = await this.issueToken(user, false);

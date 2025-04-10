@@ -100,6 +100,10 @@ export class AppModule implements NestModule {
           path: 'auth/register',
           method: RequestMethod.POST,
         },
+        {
+          path: 'place-type',
+          method: RequestMethod.GET,
+        },
       )
       .forRoutes('*');
   }

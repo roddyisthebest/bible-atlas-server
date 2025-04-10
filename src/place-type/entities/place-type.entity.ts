@@ -7,7 +7,7 @@ export class PlaceType {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: false, unique: true })
   name: string;
 
   @OneToMany(() => PlacePlaceType, (ppt) => ppt.placeType)
