@@ -10,6 +10,8 @@ import { Proposal } from 'src/proposal/entities/proposal.entity';
 import { Notification } from 'src/notification/entities/notification.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { BaseTableEntity } from 'src/common/entity/base-table.entity';
+import { UserPlaceLike } from './user-place-like.entity';
+import { UserPlaceSave } from './user-place-save.entity';
 
 export enum Role {
   SUPER,
@@ -53,4 +55,10 @@ export class User extends BaseTableEntity {
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notifications: Notification[];
+
+  @OneToMany(() => UserPlaceLike, (upl) => upl.place)
+  likedPlaces: UserPlaceLike[];
+
+  @OneToMany(() => UserPlaceSave, (ups) => ups.place)
+  savedPlaces: UserPlaceLike[];
 }
