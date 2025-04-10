@@ -222,6 +222,8 @@ export class PlaceService {
     }
   }
 
+  async scrapImages(userId: number) {}
+
   pushProgress(userId: number, progress: number) {
     const stream = this.progressStreams.get(userId);
 

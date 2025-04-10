@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { PlaceRelation } from './place-relation.entity';
 import { PlaceStereo } from '../const/place.const';
+import { Proposal } from 'src/proposal/entities/proposal.entity';
 
 @Unique(['name', 'isModern'])
 @Entity()
@@ -23,17 +24,14 @@ export class Place {
   @Column({ nullable: true })
   description: string;
 
-  @Column()
-  geoJsonText: string;
-
   @Column({ default: PlaceStereo.parent })
   stereo: PlaceStereo;
 
   @Column({ nullable: true })
   verse: string;
 
-  @Column({ nullable: true })
-  types: string;
+  @OneToMany(() => Proposal, (proposal) => proposal.place)
+  proposals: Proposal[];
 
   @OneToMany(() => PlaceRelation, (relation) => relation.parent)
   childRelations: PlaceRelation[];
