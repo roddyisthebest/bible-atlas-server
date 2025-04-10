@@ -1,17 +1,24 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { PlaceRelation } from './place-relation.entity';
+import { PlaceStereo } from '../const/place.const';
 
-export const enum PlaceStereo {
-  parent = 'parent',
-  child = 'child',
-}
+@Unique(['name', 'isModern'])
 @Entity()
 export class Place {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true, nullable: false })
+  @Column({ nullable: false })
   name: string;
+
+  @Column({ default: false })
+  isModern: boolean;
 
   @Column({ nullable: true })
   description: string;
@@ -21,6 +28,12 @@ export class Place {
 
   @Column({ default: PlaceStereo.parent })
   stereo: PlaceStereo;
+
+  @Column({ nullable: true })
+  verse: string;
+
+  @Column({ nullable: true })
+  types: string;
 
   @OneToMany(() => PlaceRelation, (relation) => relation.parent)
   childRelations: PlaceRelation[];
