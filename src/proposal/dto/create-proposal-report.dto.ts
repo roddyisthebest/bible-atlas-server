@@ -1,14 +1,5 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-
-export enum ReportType {
-  SPAM,
-  INAPPROPRIATE,
-  HATE_SPEECH,
-  HARASSMENT,
-  FALSE_INFORMATION,
-  PERSONAL_INFO,
-  ETC,
-}
+import { ReportType } from 'src/place/entities/place-report.entity';
 
 export class CreateProposalReportDto {
   @IsEnum(ReportType)

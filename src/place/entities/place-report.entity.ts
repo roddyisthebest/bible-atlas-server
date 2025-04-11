@@ -1,6 +1,7 @@
 import { BaseTableEntity } from 'src/common/entity/base-table.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Place } from './place.entity';
 export enum ReportType {
   SPAM,
   INAPPROPRIATE,
@@ -28,4 +29,11 @@ export class PlaceReport extends BaseTableEntity {
     onDelete: 'CASCADE',
   })
   creator: User;
+
+  @ManyToOne(() => Place, (place) => place.id, {
+    cascade: true,
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  place: Place;
 }
