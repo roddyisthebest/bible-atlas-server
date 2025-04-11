@@ -31,6 +31,7 @@ import { PlacePlaceType } from './place/entities/place-place-type.entity';
 import { PlaceType } from './place-type/entities/place-type.entity';
 import { UserPlaceLike } from './user/entities/user-place-like.entity';
 import { UserPlaceSave } from './user/entities/user-place-save.entity';
+import { PlaceReport } from './place/entities/place-report.entity';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { UserPlaceSave } from './user/entities/user-place-save.entity';
           PlacePlaceType,
           UserPlaceLike,
           UserPlaceSave,
+          PlaceReport,
         ],
         synchronize:
           configService.get<string>(envVariables.env) === 'dev' ? true : false,
