@@ -69,7 +69,7 @@ export const enum BibleName {
   Revelation = 'Revelation',
 }
 
-export const enum PlaceStereo {
+export enum PlaceStereo {
   parent = 'parent',
   child = 'child',
 }

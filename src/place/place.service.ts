@@ -1,25 +1,121 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import * as pLimit from 'p-limit';
 import { Observable, Subject, map } from 'rxjs';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Place } from './entities/place.entity';
+import { DataSource, In, Repository } from 'typeorm';
+import { CommonService } from 'src/common/common.service';
+import { PlaceType } from 'src/place-type/entities/place-type.entity';
+import { PlacePlaceType } from './entities/place-place-type.entity';
+import { GetPlacesDto } from './dto/get-places.dto';
 
 @Injectable()
 export class PlaceService {
+  constructor(
+    @InjectRepository(Place)
+    private readonly placeRepository: Repository<Place>,
+    @InjectRepository(PlaceType)
+    private readonly placeTypeRepository: Repository<PlaceType>,
+    private readonly commonService: CommonService,
+    private readonly dataSource: DataSource,
+  ) {}
+
   private readonly baseURL = 'https://www.openbible.info';
   private readonly geoJsonBaseURL = 'https://a.openbible.info/geo/data';
   private readonly logger = new Logger(PlaceService.name);
 
   private progressStreams = new Map<number, Subject<{ progress: number }>>();
 
-  create(createPlaceDto: CreatePlaceDto) {
-    return 'This action adds a new place';
+  async create(createPlaceDto: CreatePlaceDto) {
+    const { typeIds, ...rest } = createPlaceDto;
+
+    return await this.dataSource.transaction(async (manager) => {
+      const placeTypes = await manager.find(PlaceType, {
+        where: { id: In(typeIds) },
+      });
+
+      const hasInvalidIds = placeTypes.length !== typeIds.length;
+
+      if (hasInvalidIds) {
+        throw new BadRequestException(
+          '유효하지 않은 PlaceType ID가 포함되어 있습니다.',
+        );
+      }
+
+      const place = await manager.save(Place, { ...rest });
+
+      const relations = placeTypes.map((placeType) =>
+        manager.create(PlacePlaceType, {
+          place,
+          placeType,
+        }),
+      );
+
+      await manager.save(PlacePlaceType, relations);
+
+      const placeWithTypes = await this.placeRepository.findOne({
+        where: { id: place.id },
+        relations: ['types'],
+      });
+
+      return placeWithTypes;
+    });
   }
 
-  findAll() {
-    return `This action returns all place`;
+  async findAll(getPlacesDto: GetPlacesDto) {
+    const { limit, page, name, isModern, stereo, typeIds } = getPlacesDto;
+
+    const qb = this.placeRepository.createQueryBuilder('place');
+
+    if (name) {
+      qb.andWhere('place.name ILIKE :name', { name: `%${name}%` });
+    }
+
+    if (typeof isModern === 'boolean') {
+      qb.andWhere('place.isModern = :isModern', { isModern });
+    }
+
+    if (stereo) {
+      qb.andWhere('place.stereo = :stereo', { stereo });
+    }
+
+    if (typeIds && typeIds.length > 0) {
+      const validTypes = await this.placeTypeRepository.find({
+        where: { id: In(typeIds) },
+      });
+
+      const validTypeIds = validTypes.map((pt) => pt.id);
+
+      if (validTypeIds.length > 0) {
+        qb.innerJoin('place.types', 'placePlaceType').andWhere(
+          'placePlaceType.placeTypeId IN (:...validTypeIds)',
+          { validTypeIds },
+        );
+      } else {
+        // 아무 유효 ID 없으면 결과 없게끔
+        qb.where('1 = 0');
+      }
+    }
+
+    this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
+
+    let [data, total] = await qb.getManyAndCount();
+
+    return {
+      total,
+      page,
+      limit,
+      data,
+    };
   }
 
   findOne(id: number) {
