@@ -19,7 +19,7 @@ export class GetPlacesDto extends PagePaginationDto {
   isModern: boolean;
 
   @IsEnum(PlaceStereo)
-  stereo: PlaceStereo;
+  stereo: PlaceStereo = PlaceStereo.parent;
 
   @IsOptional()
   @IsArray()

@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
 } from 'class-validator';
 import { PlaceStereo } from '../const/place.const';
@@ -17,16 +18,18 @@ export class CreatePlaceDto {
 
   @IsBoolean()
   @IsNotEmpty()
-  isModern: boolean;
+  isModern: boolean = true;
 
   @IsString()
+  @IsOptional()
   description: string;
 
   @IsEnum(PlaceStereo)
   @IsNotEmpty()
-  stereo: PlaceStereo;
+  stereo: PlaceStereo = PlaceStereo.parent;
 
   @IsString()
+  @IsOptional()
   verse: string;
 
   @IsArray()

@@ -22,4 +22,5 @@ export class PlacePlaceType {
     onDelete: 'CASCADE',
   })
   placeType: PlaceType;
+  ppt: { id: number };
 }

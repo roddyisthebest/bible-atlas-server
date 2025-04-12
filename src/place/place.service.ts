@@ -56,28 +56,34 @@ export class PlaceService {
 
       const place = await manager.save(Place, { ...rest });
 
-      const relations = placeTypes.map((placeType) =>
-        manager.create(PlacePlaceType, {
-          place,
-          placeType,
-        }),
-      );
+      const relations = placeTypes.map((pt) => {
+        const ppt = new PlacePlaceType();
+        ppt.place = place;
+        ppt.placeType = pt;
+        return ppt;
+      });
 
       await manager.save(PlacePlaceType, relations);
 
-      const placeWithTypes = await this.placeRepository.findOne({
+      const placeWithTypes = await manager.findOne(Place, {
         where: { id: place.id },
-        relations: ['types'],
+        relations: ['types', 'types.placeType'],
       });
 
-      return placeWithTypes;
+      return {
+        ...placeWithTypes,
+        types: placeWithTypes?.types.map((type) => type.placeType),
+      };
     });
   }
 
   async findAll(getPlacesDto: GetPlacesDto) {
     const { limit, page, name, isModern, stereo, typeIds } = getPlacesDto;
 
-    const qb = this.placeRepository.createQueryBuilder('place');
+    const qb = this.placeRepository
+      .createQueryBuilder('place')
+      .leftJoinAndSelect('place.types', 'placePlaceType')
+      .leftJoinAndSelect('placePlaceType.placeType', 'placeType');
 
     if (name) {
       qb.andWhere('place.name ILIKE :name', { name: `%${name}%` });
@@ -117,26 +123,32 @@ export class PlaceService {
       total,
       page,
       limit,
-      data,
+      data: data.map((d) => {
+        return { ...d, types: d.types.map((type) => type.placeType) };
+      }),
     };
   }
 
   async findOne(id: number) {
     const place = await this.placeRepository.findOne({
       where: { id },
-      relations: ['types'],
+      relations: ['types', 'types.placeType'],
     });
 
     if (!place) {
       throw new NotFoundException('존재하지 않는 id값의 장소입니다.');
     }
 
-    return place;
+    return { ...place, types: place.types.map((ppt) => ppt.placeType) };
   }
 
   @MinimumRole(Role.SUPER)
   async update(id: number, updatePlaceDto: UpdatePlaceDto) {
-    await this.findOne(id);
+    const place = await this.placeRepository.findOne({ where: { id } });
+
+    if (!place) {
+      throw new NotFoundException('존재하지 않는 id값의 장소입니다.');
+    }
 
     const { typeIds, ...rest } = updatePlaceDto;
 
@@ -159,23 +171,26 @@ export class PlaceService {
             );
           }
 
-          const relations = placeTypes.map((placeType) =>
-            manager.create(PlacePlaceType, {
-              place: { id },
-              placeType,
-            }),
-          );
+          const relations = placeTypes.map((pt) => {
+            const ppt = new PlacePlaceType();
+            ppt.place = place;
+            ppt.placeType = pt;
+            return ppt;
+          });
 
           await manager.save(PlacePlaceType, relations);
         }
       }
 
-      const placeWithTypes = await this.placeRepository.findOne({
+      const placeWithTypes = await manager.findOne(Place, {
         where: { id },
-        relations: ['types'],
+        relations: ['types', 'types.placeType'],
       });
 
-      return placeWithTypes;
+      return {
+        ...placeWithTypes,
+        types: placeWithTypes?.types.map((ppt) => ppt.placeType),
+      };
     });
   }
 

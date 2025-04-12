@@ -47,7 +47,7 @@ export class Place {
   parentRelations: PlaceRelation[];
 
   @OneToMany(() => PlacePlaceType, (ppt) => ppt.place)
-  types: PlaceType[];
+  types: PlacePlaceType[];
 
   @OneToMany(() => UserPlaceLike, (upl) => upl.user)
   likedUsers: UserPlaceLike[];
