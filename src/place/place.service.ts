@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
@@ -118,12 +119,61 @@ export class PlaceService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} place`;
+  async findOne(id: number) {
+    const place = await this.placeRepository.findOne({
+      where: { id },
+      relations: ['types'],
+    });
+
+    if (!place) {
+      throw new NotFoundException('존재하지 않는 id값의 장소입니다.');
+    }
+
+    return place;
   }
 
-  update(id: number, updatePlaceDto: UpdatePlaceDto) {
-    return `This action updates a #${id} place`;
+  async update(id: number, updatePlaceDto: UpdatePlaceDto) {
+    await this.findOne(id);
+
+    const { typeIds, ...rest } = updatePlaceDto;
+
+    return await this.dataSource.transaction(async (manager) => {
+      await manager.update(Place, { id }, { ...rest });
+
+      if (typeIds) {
+        await manager.delete(PlacePlaceType, { place: { id } });
+
+        if (typeIds.length > 0) {
+          const placeTypes = await manager.find(PlaceType, {
+            where: { id: In(typeIds) },
+          });
+
+          const hasInvalidIds = placeTypes.length !== typeIds.length;
+
+          if (hasInvalidIds) {
+            throw new BadRequestException(
+              '유효하지 않은 PlaceType ID가 포함되어 있습니다.',
+            );
+          }
+
+          const relations = placeTypes.map((placeType) =>
+            manager.create(PlacePlaceType, {
+              place: { id },
+              placeType,
+            }),
+          );
+
+          await manager.save(PlacePlaceType, relations);
+        }
+      }
+
+      const placeWithTypes = await this.placeRepository.findOne({
+        where: { id },
+        relations: ['types'],
+      });
+
+      return placeWithTypes;
+    });
   }
 
   remove(id: number) {
