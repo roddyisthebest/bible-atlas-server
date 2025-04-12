@@ -176,8 +176,12 @@ export class PlaceService {
     });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} place`;
+  async remove(id: number) {
+    await this.findOne(id);
+
+    this.placeRepository.delete({ id });
+
+    return id;
   }
 
   async scrapPlacesFromWeb(userId: number) {
