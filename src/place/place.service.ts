@@ -18,6 +18,8 @@ import { CommonService } from 'src/common/common.service';
 import { PlaceType } from 'src/place-type/entities/place-type.entity';
 import { PlacePlaceType } from './entities/place-place-type.entity';
 import { GetPlacesDto } from './dto/get-places.dto';
+import { MinimumRole } from 'src/auth/decorator/minimun-role.decorator';
+import { Role } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class PlaceService {
@@ -132,6 +134,7 @@ export class PlaceService {
     return place;
   }
 
+  @MinimumRole(Role.SUPER)
   async update(id: number, updatePlaceDto: UpdatePlaceDto) {
     await this.findOne(id);
 
@@ -176,6 +179,7 @@ export class PlaceService {
     });
   }
 
+  @MinimumRole(Role.SUPER)
   async remove(id: number) {
     await this.findOne(id);
 
@@ -184,6 +188,7 @@ export class PlaceService {
     return id;
   }
 
+  @MinimumRole(Role.SUPER)
   async scrapPlacesFromWeb(userId: number) {
     try {
       const res = await axios.get(`${this.baseURL}/geo/atlas/all`);
@@ -372,6 +377,7 @@ export class PlaceService {
     }
   }
 
+  @MinimumRole(Role.SUPER)
   async scrapImages(userId: number) {}
 
   pushProgress(userId: number, progress: number) {

@@ -28,11 +28,13 @@ export class PlaceController {
     return this.placeService.create(createPlaceDto);
   }
 
+  @Public()
   @Get()
   findAll(@Query() getPlacesDto: GetPlacesDto) {
     return this.placeService.findAll(getPlacesDto);
   }
 
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.placeService.findOne(id);

@@ -110,6 +110,14 @@ export class AppModule implements NestModule {
           path: 'place-type',
           method: RequestMethod.GET,
         },
+        {
+          path: 'place',
+          method: RequestMethod.GET,
+        },
+        {
+          path: 'place/:id',
+          method: RequestMethod.GET,
+        },
       )
       .forRoutes('*');
   }

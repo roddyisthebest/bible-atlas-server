@@ -35,6 +35,7 @@ export class PlaceTypeController {
     return this.placeTypeService.findAll(findAllDto);
   }
 
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.placeTypeService.findOne(id);
