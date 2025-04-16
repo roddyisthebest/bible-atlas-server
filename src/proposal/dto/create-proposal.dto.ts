@@ -19,10 +19,10 @@ export class CreateProposalDto {
   @IsNotEmpty()
   comment: string;
 
-  @IsNumber()
+  @IsString()
   @ValidateIf(
     (o) => o.type === ProposalType.UPDATE || o.type === ProposalType.DELETE,
   )
   @IsNotEmpty()
-  placeId: number;
+  placeId: string;
 }

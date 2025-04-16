@@ -78,3 +78,5 @@ export const enum PlaceType {
   'region' = 'region',
   'settlement' = 'settlement',
 }
+
+export const placeFilesLength = 2;

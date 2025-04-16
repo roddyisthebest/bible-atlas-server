@@ -16,7 +16,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: 'http://localhost:4901', // 리액트 앱 주소
+    origin: 'http://localhost:4900', // 리액트 앱 주소
     methods: ['GET'], // SSE는 GET 요청만 사용
     credentials: true,
   });

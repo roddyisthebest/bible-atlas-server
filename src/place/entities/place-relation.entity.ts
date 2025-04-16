@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
   JoinColumn,
+  Column,
 } from 'typeorm';
 import { Place } from './place.entity';
 
@@ -24,4 +25,7 @@ export class PlaceRelation {
   })
   @JoinColumn({ name: 'child_id' })
   child: Place;
+
+  @Column()
+  possibility: number;
 }

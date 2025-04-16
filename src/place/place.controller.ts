@@ -17,6 +17,8 @@ import { UpdatePlaceDto } from './dto/update-place.dto';
 import { UserId } from 'src/common/decorator/user-id.decorator';
 import { Public } from 'src/auth/decorator/public.decorator';
 import { GetPlacesDto } from './dto/get-places.dto';
+import { MinimumRole } from 'src/auth/decorator/minimun-role.decorator';
+import { Role } from 'src/user/entities/user.entity';
 
 @Controller('place')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -36,23 +38,33 @@ export class PlaceController {
 
   @Public()
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id') id: string) {
     return this.placeService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updatePlaceDto: UpdatePlaceDto) {
+  update(@Param('id') id: string, @Body() updatePlaceDto: UpdatePlaceDto) {
     return this.placeService.update(id, updatePlaceDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  remove(@Param('id') id: string) {
     return this.placeService.remove(id);
   }
 
+  @MinimumRole(Role.SUPER)
   @Post('scrap')
-  scrapPlacesFromWeb(@UserId() userId: number) {
-    return this.placeService.scrapPlacesFromWeb(userId);
+  scrapPlacesFromWeb(
+    @Query('page') page: number = 0,
+    @UserId() userId: number,
+  ) {
+    return this.placeService.scrapPlacesFromWeb(userId, page);
+  }
+
+  @MinimumRole(Role.SUPER)
+  @Post('push-to-db')
+  pushToDB() {
+    return this.placeService.pushToDB();
   }
 
   @Public()

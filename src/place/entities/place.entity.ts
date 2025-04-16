@@ -2,6 +2,7 @@ import {
   Column,
   Entity,
   OneToMany,
+  PrimaryColumn,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
@@ -16,8 +17,8 @@ import { UserPlaceSave } from 'src/user/entities/user-place-save.entity';
 @Unique(['name', 'isModern'])
 @Entity()
 export class Place {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn()
+  id: string;
 
   @Column({ nullable: false })
   name: string;
@@ -28,6 +29,9 @@ export class Place {
   @Column({ nullable: true })
   description: string;
 
+  @Column({ nullable: true })
+  koreanDescription: string;
+
   @Column({ default: PlaceStereo.parent })
   stereo: PlaceStereo;
 
@@ -36,6 +40,9 @@ export class Place {
 
   @Column({ default: 0 })
   likeCount: number;
+
+  @Column({ nullable: true })
+  unknownPlacePossibility: number;
 
   @OneToMany(() => Proposal, (proposal) => proposal.place)
   proposals: Proposal[];

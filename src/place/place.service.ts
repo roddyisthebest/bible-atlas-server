@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -20,6 +21,15 @@ import { PlacePlaceType } from './entities/place-place-type.entity';
 import { GetPlacesDto } from './dto/get-places.dto';
 import { MinimumRole } from 'src/auth/decorator/minimun-role.decorator';
 import { Role } from 'src/user/entities/user.entity';
+import { join } from 'path';
+import { writeFile, readFile } from 'fs/promises';
+import { PlaceRelation } from './entities/place-relation.entity';
+import {
+  AiPlaceFile,
+  AiPlaceRelation,
+  AiPlaceData,
+} from './types/ai-place-file.type';
+import { placeFilesLength } from './const/place.const';
 
 @Injectable()
 export class PlaceService {
@@ -129,7 +139,7 @@ export class PlaceService {
     };
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const place = await this.placeRepository.findOne({
       where: { id },
       relations: ['types', 'types.placeType'],
@@ -143,7 +153,7 @@ export class PlaceService {
   }
 
   @MinimumRole(Role.SUPER)
-  async update(id: number, updatePlaceDto: UpdatePlaceDto) {
+  async update(id: string, updatePlaceDto: UpdatePlaceDto) {
     const place = await this.placeRepository.findOne({ where: { id } });
 
     if (!place) {
@@ -195,7 +205,7 @@ export class PlaceService {
   }
 
   @MinimumRole(Role.SUPER)
-  async remove(id: number) {
+  async remove(id: string) {
     await this.findOne(id);
 
     this.placeRepository.delete({ id });
@@ -204,23 +214,24 @@ export class PlaceService {
   }
 
   @MinimumRole(Role.SUPER)
-  async scrapPlacesFromWeb(userId: number) {
+  async scrapPlacesFromWeb(userId: number, page: number) {
     try {
       const res = await axios.get(`${this.baseURL}/geo/atlas/all`);
       const $ = cheerio.load(res.data);
       const result: any[] = [];
-      const details: any[] = [];
-      const childDetails: any[] = [];
+      const parents: any[] = [];
+      const childrens: any[] = [];
       $('h2[id]').each((_, el) => {
         const h2 = $(el);
         const p = h2.next('p');
         const id = h2.attr('id');
-        const title = h2.text().trim();
+        const name = h2.text().trim();
         const imageTag = p.find('img');
-        const imageUrl = imageTag.attr('src');
+        const imageTitle = imageTag.attr('src')?.split('/')?.at(-1);
 
         const placeLinkTag = p.find('a').first();
         const placeUrl = placeLinkTag.attr('href');
+        const isModern = placeUrl?.includes('modern');
 
         const rawHtml = p.html() || '';
         const descMatch = rawHtml.match(
@@ -231,27 +242,47 @@ export class PlaceService {
         const verses: string[] = [];
         p.find('a[href*="biblegateway"]').each((_, a) => {
           const href = $(a).attr('href');
-          if (href) verses.push(href);
+          if (href) {
+            const url = new URL(href);
+            const searchParams = url.searchParams.get('search');
+            if (searchParams) {
+              verses.push(searchParams);
+            }
+          }
         });
 
         result.push({
           id,
-          title,
-          imageUrl,
-          placeUrl,
-          description,
+          name,
+          imageTitle,
+          isModern,
+          stereo: 'parent',
+          description: '',
+          koreanDescription: '',
           verses,
+          placeUrl,
         });
       });
 
-      const placeUrls = result.map((re) => re.placeUrl);
-
       const batchParentSize = 5;
       let doneParentCount = 0;
-      const parentTotal = 50;
+      const limit = 20;
+
+      const start = page * limit;
+      const end = (page + 1) * limit;
+
+      const slicedResult = result.slice(start, end);
+
+      const parentTotal = slicedResult.length;
+
+      const relations: {
+        parentId: string;
+        childId: string | undefined;
+        possibility: number | null;
+      }[] = [];
 
       for (let i = 0; i < parentTotal; i += batchParentSize) {
-        const batch = result.slice(i, i + batchParentSize);
+        const batch = slicedResult.slice(i, i + batchParentSize);
 
         const promises = batch.map(async (place) => {
           const fullUrl = `${this.baseURL}${place.placeUrl}`;
@@ -259,6 +290,9 @@ export class PlaceService {
           const $ = cheerio.load(res.data);
 
           const identificationPaths: any[] = [];
+
+          let unknownPlacePossibility: number | null = null;
+
           const types = $('tr')
             .filter(
               (_, el) =>
@@ -267,7 +301,8 @@ export class PlaceService {
             )
             .find('td')
             .text()
-            .trim();
+            .trim()
+            .split(/\s*or\s*/);
           const response = await axios.get(
             `${this.geoJsonBaseURL}/${place.id}.geojson`,
           );
@@ -275,7 +310,6 @@ export class PlaceService {
 
           // 👉 JSON → string
           const geojsonText = JSON.stringify(geojsonObject);
-
           $('ol')
             .first()
             .children('li')
@@ -284,24 +318,51 @@ export class PlaceService {
               return !liText.includes('another name');
             })
             .each((_, el) => {
+              const liText = $(el).text().toLowerCase();
+
+              const isUnknown = liText.includes('unknown');
+
+              if (isUnknown) {
+                const match = liText.match(/(\d+)%/);
+                const rate = match ? Number(match[1]) : null;
+                unknownPlacePossibility = rate;
+                return;
+              }
+
               const path = $(el).find('a').attr('href');
+
               if (!path) {
                 return;
               }
+
+              const isPerfect = liText.includes('very high confidence');
+
+              const match = liText.match(/(\d+)%/);
+              const possibility = match ? Number(match[1]) : null;
+
+              const childId = path.split('/')?.at(-2);
+
+              relations.push({
+                parentId: place.id,
+                childId,
+                possibility: isPerfect ? 100 : possibility,
+              });
               identificationPaths.push(path);
             });
 
           return {
+            ...place,
             id: place.id,
             identificationPaths,
             types,
+            unknownPlacePossibility,
             geojsonText,
           };
         });
 
         const detail = await Promise.all(promises); // ✅ 병렬 실행
 
-        details.push(...detail);
+        parents.push(...detail);
 
         doneParentCount += batch.length;
         const progress = Number(
@@ -312,24 +373,19 @@ export class PlaceService {
         await this.delay(1000); // ✅ 다음 배치 전에 잠깐 딜레이
       }
 
-      const identificationPaths: string[] = details.flatMap(
-        (d) => d.identificationPaths,
-      );
       const pureIdentificationPaths: string[] = Array.from(
-        new Set(details.flatMap((d) => d.identificationPaths)),
+        new Set(parents.flatMap((d) => d.identificationPaths)),
       );
 
       const batchChildSize = 5;
       let doneChildCount = 0;
 
-      const childTotal = 50;
-      // const childTotal = pureIdentificationPaths.length
+      // const childTotal = 50;
+      const childTotal = pureIdentificationPaths.length;
 
       for (let i = 0; i < childTotal; i += batchChildSize) {
         const batch = pureIdentificationPaths.slice(i, i + batchChildSize);
         const promises = batch.map(async (placeUrl) => {
-          // "/geo/ancient/a64f355/bethel-1"
-
           const [, , period, placeId, name] = placeUrl.split('/');
 
           const fullUrl = `${this.baseURL}${placeUrl}`;
@@ -347,7 +403,12 @@ export class PlaceService {
             )
             .find('td')
             .text()
-            .trim();
+            .trim()
+            .split(/\s*or\s*/);
+
+          if (!hasAbout) {
+            return null;
+          }
 
           const response = await axios.get(
             `${this.geoJsonBaseURL}/${placeId}.geojson`,
@@ -357,21 +418,20 @@ export class PlaceService {
           // 👉 JSON → string
           const geojsonText = JSON.stringify(geojsonObject);
 
-          if (!hasAbout) {
-            return null;
-          }
-
           return {
             id: placeId,
             name,
-            period,
-            geojsonText,
+            isModern: period === 'modern',
+            stereo: 'child',
+            description: '',
+            koreanDescription: '',
             types,
+            geojsonText,
           };
         });
 
         const detail = await Promise.all(promises); // ✅ 병렬 실행
-        childDetails.push(...detail);
+        childrens.push(...detail);
         doneChildCount += batch.length;
         const progress =
           50 + Number(((doneChildCount / childTotal / 2) * 100).toFixed(1));
@@ -380,11 +440,31 @@ export class PlaceService {
         await this.delay(1000); // ✅ 다음 배치 전에 잠깐 딜레이
       }
 
+      const data = [...parents, ...childrens];
+
+      const date = new Date().valueOf();
+
+      const dir = join(process.cwd(), 'places-data');
+      const path = join(dir, `${date}&page=${page}&limit=${limit}.json`);
+
+      try {
+        await writeFile(
+          path,
+          JSON.stringify({
+            data,
+            relations,
+            total: data.length,
+          }),
+          'utf-8',
+        );
+      } catch (error) {
+        throw new ConflictException('파일 저장 에러입니다.', error);
+      }
+
       return {
-        result,
-        details,
-        childDetails,
-        total: result.length,
+        data,
+        relations,
+        total: data.length,
       };
     } catch (error) {
       this.logger.error('❌ Failed to scrap places from web', error);
@@ -394,6 +474,124 @@ export class PlaceService {
 
   @MinimumRole(Role.SUPER)
   async scrapImages(userId: number) {}
+
+  @MinimumRole(Role.SUPER)
+  async pushToDB() {
+    const dir = join(process.cwd(), 'ai-places-data');
+    const paths = Array.from({ length: placeFilesLength }, (_, i) =>
+      join(dir, `page${i}.json`),
+    );
+
+    let parsedUniquePlaces: Place[] = [];
+    let parsedRelations: PlaceRelation[] = [];
+    let parsedPlacePlaceTypes: PlacePlaceType[] = [];
+    let parsedPlaceTypes: string[] = [];
+
+    // 1. 파일 읽기 및 파싱 단계
+    try {
+      const files = await Promise.all(paths.map((path) => readFile(path)));
+      const parsedFiles: AiPlaceFile[] = files.map((buf) =>
+        JSON.parse(buf.toString()),
+      );
+
+      const parsedDatas = parsedFiles.flatMap((parse) => parse.data);
+      const uniqueDatas = Array.from(
+        new Map(parsedDatas.map((item) => [item.id, item])).values(),
+      );
+
+      parsedUniquePlaces = uniqueDatas.map(
+        (data) =>
+          ({
+            id: data.id,
+            name: data.name,
+            isModern: data.isModern,
+            description: data.description,
+            koreanDescription: data.koreanDescription,
+            stereo: data.stereo,
+            verse: data.verses?.join(', '),
+          }) as Place,
+      );
+
+      parsedPlaceTypes = uniqueDatas.flatMap((data) => data.types);
+
+      uniqueDatas.forEach((data) => {
+        const types = data.types;
+
+        const placePlaceTypes = types.map((type) => {
+          const placePlaceType = new PlacePlaceType();
+          placePlaceType.place = { id: data.id } as Place;
+          placePlaceType.placeType = { name: type } as PlaceType;
+          return placePlaceType;
+        });
+
+        parsedPlacePlaceTypes.push(...placePlaceTypes);
+      });
+
+      parsedRelations = parsedFiles.flatMap((parse) =>
+        parse.relations.map((relation) => {
+          const placeRelation = new PlaceRelation();
+          placeRelation.parent = { id: relation.parentId } as Place;
+          placeRelation.child = { id: relation.childId } as Place;
+          placeRelation.possibility = relation.possibility;
+          return placeRelation;
+        }),
+      );
+    } catch (e) {
+      throw new InternalServerErrorException('📂 파일 읽기 또는 파싱 실패', {
+        cause: e,
+      });
+    }
+
+    // 2. DB 저장 단계
+    try {
+      return await this.dataSource.transaction(async (manager) => {
+        await Promise.all([
+          manager.delete(PlaceRelation, {}),
+          manager.delete(PlacePlaceType, {}),
+          manager.delete(PlaceType, {}),
+          manager.delete(Place, {}),
+        ]);
+
+        await manager.save(Place, parsedUniquePlaces);
+        await manager.save(PlaceRelation, parsedRelations);
+
+        const uniquePlaceTypes = Array.from(new Set(parsedPlaceTypes)).map(
+          (name) => {
+            const type = new PlaceType();
+            type.name = name;
+            return type;
+          },
+        );
+
+        const placeTypes = await manager.save(PlaceType, uniquePlaceTypes);
+
+        const placePlaceTypes = parsedPlacePlaceTypes
+          .map((placePlaceType) => {
+            const placeType = placeTypes.find(
+              (placeType) => placeType.name === placePlaceType.placeType.name,
+            );
+            if (!placeType) {
+              return null;
+            }
+
+            placePlaceType.placeType = placeType;
+
+            return placePlaceType;
+          })
+          .filter((placePlaceType) => !!placePlaceType);
+
+        await manager.save(PlacePlaceType, placePlaceTypes as PlacePlaceType[]);
+        return {
+          status: 200,
+          message: `📌 ${parsedUniquePlaces.length}개 장소와 ${parsedRelations.length}개 관계 저장 완료`,
+        };
+      });
+    } catch (e) {
+      throw new InternalServerErrorException('💾 DB 저장 중 오류 발생', {
+        cause: e,
+      });
+    }
+  }
 
   pushProgress(userId: number, progress: number) {
     const stream = this.progressStreams.get(userId);
