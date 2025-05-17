@@ -2,16 +2,14 @@ import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   Entity,
-  Index,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ProposalAgreement } from './proposal-agreement.entity';
-import { UserProposalReport } from 'src/user/entities/user-proposal-report.entity';
+
 import { BaseTableEntity } from 'src/common/entity/base-table.entity';
-import { Location } from 'src/location/entities/location.entity';
+
+import { Place } from 'src/place/entities/place.entity';
 
 export enum ProposalType {
   CREATE,
@@ -28,43 +26,7 @@ export class Proposal extends BaseTableEntity {
   type: ProposalType;
 
   @Column({ nullable: true })
-  newLocationName: string;
-
-  @Column({ nullable: true })
-  newLocationDescription: string;
-
-  @Column({ nullable: true })
   comment: string;
-
-  @Column({ default: 0 })
-  agreeCount: number;
-
-  @Column({ default: 0 })
-  disagreeCount: number;
-
-  @Column({
-    type: 'decimal',
-    precision: 10,
-    scale: 6,
-    transformer: {
-      to: (value: number) => value,
-      from: (value: string) => parseFloat(value),
-    },
-    nullable: true,
-  })
-  newLatitude: number;
-
-  @Column({
-    type: 'decimal',
-    precision: 10,
-    scale: 6,
-    transformer: {
-      to: (value: number) => value,
-      from: (value: string) => parseFloat(value),
-    },
-    nullable: true,
-  })
-  newLongitude: number;
 
   @ManyToOne(() => User, (user) => user.id, {
     cascade: true,
@@ -73,23 +35,11 @@ export class Proposal extends BaseTableEntity {
   })
   creator: User;
 
-  @OneToMany(
-    () => ProposalAgreement,
-    (proposalAgreement) => proposalAgreement.user,
-  )
-  proposalAgreements: ProposalAgreement[];
-
-  @OneToMany(
-    () => UserProposalReport,
-    (userProposalReport) => userProposalReport.user,
-  )
-  reports: UserProposalReport[];
-
-  @JoinColumn({ name: 'locationId' })
-  @ManyToOne(() => Location, (location) => location.proposals, {
+  @JoinColumn({ name: 'placeId' })
+  @ManyToOne(() => Place, (place) => place.proposals, {
     cascade: true,
     nullable: true,
     onDelete: 'CASCADE',
   })
-  location: Location;
+  place: Place;
 }

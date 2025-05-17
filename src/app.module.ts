@@ -6,18 +6,11 @@ import {
 } from '@nestjs/common';
 
 import { UserModule } from './user/user.module';
-import { LocationModule } from './location/location.module';
 import { ProposalModule } from './proposal/proposal.module';
 import { NotificationModule } from './notification/notification.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ProposalAgreement } from './proposal/entities/proposal-agreement.entity';
 import { Proposal } from './proposal/entities/proposal.entity';
-import { Location } from './location/entities/location.entity';
 import { Notification } from './notification/entities/notification.entity';
-import { UserLocationLike } from './user/entities/user-location-like.entity';
-import { UserLocationReport } from './user/entities/user-location-report.entity';
-import { UserLocationSave } from './user/entities/user-location-save.entity';
-import { UserProposalReport } from './user/entities/user-proposal-report.entity';
 import { User } from './user/entities/user.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
@@ -27,10 +20,18 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { AttatchUserMiddleware } from './auth/middleware/attatch-user.middleware';
 import { RoleGuard } from './auth/guard/role.guard';
-import { AdminLocationModule } from './admin-location/admin-location.module';
 import { CommonModule } from './common/common.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReportModule } from './report/report.module';
+import { PlaceModule } from './place/place.module';
+import { Place } from './place/entities/place.entity';
+import { PlaceRelation } from './place/entities/place-relation.entity';
+import { PlaceTypeModule } from './place-type/place-type.module';
+import { PlacePlaceType } from './place/entities/place-place-type.entity';
+import { PlaceType } from './place-type/entities/place-type.entity';
+import { UserPlaceLike } from './user/entities/user-place-like.entity';
+import { UserPlaceSave } from './user/entities/user-place-save.entity';
+import { PlaceReport } from './place/entities/place-report.entity';
 
 @Module({
   imports: [
@@ -60,15 +61,16 @@ import { ReportModule } from './report/report.module';
         password: configService.get<string>(envVariables.dbPassword),
         database: configService.get<string>(envVariables.dbDatabase),
         entities: [
-          ProposalAgreement,
           Proposal,
-          Location,
           Notification,
-          UserLocationLike,
-          UserLocationReport,
-          UserLocationSave,
-          UserProposalReport,
           User,
+          Place,
+          PlaceRelation,
+          PlaceType,
+          PlacePlaceType,
+          UserPlaceLike,
+          UserPlaceSave,
+          PlaceReport,
         ],
         synchronize:
           configService.get<string>(envVariables.env) === 'dev' ? true : false,
@@ -76,14 +78,14 @@ import { ReportModule } from './report/report.module';
       inject: [ConfigService],
     }),
     UserModule,
-    LocationModule,
     ProposalModule,
     NotificationModule,
     AuthModule,
-    AdminLocationModule,
     CommonModule,
     ScheduleModule.forRoot(),
     ReportModule,
+    PlaceModule,
+    PlaceTypeModule,
   ],
   controllers: [],
   providers: [
@@ -105,15 +107,15 @@ export class AppModule implements NestModule {
           method: RequestMethod.POST,
         },
         {
-          path: 'location',
+          path: 'place-type',
           method: RequestMethod.GET,
         },
         {
-          path: 'location/within',
+          path: 'place',
           method: RequestMethod.GET,
         },
         {
-          path: 'location/:id',
+          path: 'place/:id',
           method: RequestMethod.GET,
         },
       )
