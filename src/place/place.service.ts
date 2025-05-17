@@ -22,14 +22,13 @@ import { GetPlacesDto } from './dto/get-places.dto';
 import { MinimumRole } from 'src/auth/decorator/minimun-role.decorator';
 import { Role } from 'src/user/entities/user.entity';
 import { join } from 'path';
-import { writeFile, readFile } from 'fs/promises';
+import { writeFile, readFile, readdir } from 'fs/promises';
 import { PlaceRelation } from './entities/place-relation.entity';
 import {
   AiPlaceFile,
   AiPlaceRelation,
   AiPlaceData,
 } from './types/ai-place-file.type';
-import { placeFilesLength } from './const/place.const';
 
 @Injectable()
 export class PlaceService {
@@ -478,9 +477,11 @@ export class PlaceService {
   @MinimumRole(Role.SUPER)
   async pushToDB() {
     const dir = join(process.cwd(), 'ai-places-data');
-    const paths = Array.from({ length: placeFilesLength }, (_, i) =>
-      join(dir, `page${i}.json`),
-    );
+    const fileNames = await readdir(dir);
+
+    const paths = fileNames
+      .filter((file) => file.endsWith('.json')) // 확장자만 체크
+      .map((file) => join(dir, file));
 
     let parsedUniquePlaces: Place[] = [];
     let parsedRelations: PlaceRelation[] = [];
