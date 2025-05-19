@@ -26,6 +26,12 @@ export class User extends BaseTableEntity {
   id: number;
 
   @Column({
+    unique: false,
+    nullable: true,
+  })
+  name: string;
+
+  @Column({
     unique: true,
   })
   email: string;

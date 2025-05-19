@@ -101,8 +101,11 @@ export class AuthService {
     const accessToken = await this.issueToken(user, false);
 
     return {
-      refreshToken,
-      accessToken,
+      user,
+      authData: {
+        refreshToken,
+        accessToken,
+      },
     };
   }
 
