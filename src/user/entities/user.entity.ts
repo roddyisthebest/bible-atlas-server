@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BaseTableEntity } from 'src/common/entity/base-table.entity';
 import { UserPlaceLike } from './user-place-like.entity';
 import { UserPlaceSave } from './user-place-save.entity';
+import { UserPlaceMemo } from './user-place-memo.entity';
 
 export enum Role {
   SUPER,
@@ -67,4 +68,7 @@ export class User extends BaseTableEntity {
 
   @OneToMany(() => UserPlaceSave, (ups) => ups.place)
   savedPlaces: UserPlaceLike[];
+
+  @OneToMany(() => UserPlaceMemo, (ups) => ups.place)
+  memoedPlaces: UserPlaceMemo[];
 }

@@ -32,6 +32,7 @@ import { PlaceType } from './place-type/entities/place-type.entity';
 import { UserPlaceLike } from './user/entities/user-place-like.entity';
 import { UserPlaceSave } from './user/entities/user-place-save.entity';
 import { PlaceReport } from './place/entities/place-report.entity';
+import { UserPlaceMemo } from './user/entities/user-place-memo.entity';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { PlaceReport } from './place/entities/place-report.entity';
           PlacePlaceType,
           UserPlaceLike,
           UserPlaceSave,
+          UserPlaceMemo,
           PlaceReport,
         ],
         synchronize:

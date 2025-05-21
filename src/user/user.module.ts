@@ -5,9 +5,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Proposal } from 'src/proposal/entities/proposal.entity';
 import { CommonModule } from 'src/common/common.module';
+import { Place } from 'src/place/entities/place.entity';
+import { PlaceModule } from 'src/place/place.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Proposal]), CommonModule],
+  imports: [
+    TypeOrmModule.forFeature([User, Proposal, Place]),
+    CommonModule,
+    PlaceModule,
+  ],
   controllers: [UserController],
   providers: [UserService],
   exports: [UserService],

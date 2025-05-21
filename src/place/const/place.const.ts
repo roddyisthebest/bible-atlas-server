@@ -78,3 +78,9 @@ export const enum PlaceType {
   'region' = 'region',
   'settlement' = 'settlement',
 }
+
+export enum PlaceFilter {
+  'like' = 'like',
+  'memo' = 'memo',
+  'save' = 'save',
+}

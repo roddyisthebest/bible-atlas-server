@@ -19,6 +19,7 @@ import { Public } from 'src/auth/decorator/public.decorator';
 import { GetPlacesDto } from './dto/get-places.dto';
 import { MinimumRole } from 'src/auth/decorator/minimun-role.decorator';
 import { Role } from 'src/user/entities/user.entity';
+import { CreateOrUpdatePlaceMemoDto } from './dto/create-or-update-place-memo.dto';
 
 @Controller('place')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -50,6 +51,34 @@ export class PlaceController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.placeService.remove(id);
+  }
+
+  @Post(':id/like')
+  toggleLike(@Param('id') id: string, @UserId() userId: number) {
+    return this.placeService.toggleLike(userId, id);
+  }
+
+  @Post(':id/save')
+  toggleSave(@Param('id') id: string, @UserId() userId: number) {
+    return this.placeService.toggleSave(userId, id);
+  }
+
+  @Post(':id/memo')
+  createOrUpdateMemo(
+    @Param('id') id: string,
+    @UserId() userId: number,
+    @Body() createOrUpdatePlaceMemoDto: CreateOrUpdatePlaceMemoDto,
+  ) {
+    return this.placeService.createOrUpdateMemo(
+      userId,
+      id,
+      createOrUpdatePlaceMemoDto,
+    );
+  }
+
+  @Delete(':id/memo')
+  deleteMemo(@Param('id') id: string, @UserId() userId: number) {
+    return this.placeService.deleteMemo(userId, id);
   }
 
   @MinimumRole(Role.SUPER)

@@ -29,6 +29,12 @@ import {
   AiPlaceRelation,
   AiPlaceData,
 } from './types/ai-place-file.type';
+import { GetMyPlacesDto } from './dto/get-my-places.dto';
+import { PlaceFilter } from './const/place.const';
+import { UserPlaceLike } from 'src/user/entities/user-place-like.entity';
+import { UserPlaceSave } from 'src/user/entities/user-place-save.entity';
+import { UserPlaceMemo } from 'src/user/entities/user-place-memo.entity';
+import { CreateOrUpdatePlaceMemoDto } from './dto/create-or-update-place-memo.dto';
 
 @Injectable()
 export class PlaceService {
@@ -37,6 +43,12 @@ export class PlaceService {
     private readonly placeRepository: Repository<Place>,
     @InjectRepository(PlaceType)
     private readonly placeTypeRepository: Repository<PlaceType>,
+    @InjectRepository(UserPlaceLike)
+    private readonly userPlaceLikeRepository: Repository<UserPlaceLike>,
+    @InjectRepository(UserPlaceSave)
+    private readonly userPlaceSaveRepository: Repository<UserPlaceSave>,
+    @InjectRepository(UserPlaceMemo)
+    private readonly userPlaceMemoRepository: Repository<UserPlaceMemo>,
     private readonly commonService: CommonService,
     private readonly dataSource: DataSource,
   ) {}
@@ -138,6 +150,61 @@ export class PlaceService {
     };
   }
 
+  async findMyPlaces(userId: number, getMyPlacesDto: GetMyPlacesDto) {
+    const { limit, page, filter } = getMyPlacesDto;
+
+    const qb = this.placeRepository
+      .createQueryBuilder('place')
+      .leftJoinAndSelect('place.types', 'placePlaceType')
+      .leftJoinAndSelect('placePlaceType.placeType', 'placeType');
+
+    switch (filter) {
+      case PlaceFilter.like:
+        qb.innerJoin(
+          'user_place_like', // 테이블 이름
+          'upl',
+          'upl.placeId = place.id AND upl.userId = :userId',
+          { userId },
+        );
+        break;
+
+      case PlaceFilter.save:
+        qb.innerJoin(
+          'user_place_save', // 테이블 이름
+          'ups',
+          'ups.placeId = place.id AND ups.userId = :userId',
+          { userId },
+        );
+
+        break;
+
+      case PlaceFilter.memo:
+        qb.innerJoin(
+          'user_place_memo', // 테이블 이름
+          'upm',
+          'upm.placeId = place.id AND upm.userId = :userId',
+          { userId },
+        );
+        break;
+
+      default:
+        qb.where('1 = 0'); // 필터가 없으면 아무 것도 안 돌게
+        break;
+    }
+
+    this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
+    let [data, total] = await qb.getManyAndCount();
+
+    return {
+      total,
+      page,
+      limit,
+      data: data.map((d) => {
+        return { ...d, types: d.types.map((type) => type.placeType) };
+      }),
+    };
+  }
+
   async findOne(id: string) {
     const place = await this.placeRepository.findOne({
       where: { id },
@@ -210,6 +277,134 @@ export class PlaceService {
     this.placeRepository.delete({ id });
 
     return id;
+  }
+
+  async toggleLike(userId: number, placeId: string) {
+    const place = await this.placeRepository.findOne({
+      where: { id: placeId },
+    });
+
+    if (!place) {
+      throw new NotFoundException('불명확한 place id 입니다.');
+    }
+
+    const isExist = await this.userPlaceLikeRepository.findOne({
+      where: {
+        user: userId as any,
+        place: placeId as any,
+      },
+    });
+
+    if (isExist) {
+      await this.userPlaceLikeRepository.remove(isExist);
+      return { liked: false };
+    }
+
+    const like = this.userPlaceLikeRepository.create({
+      user: userId as any,
+      place: placeId as any,
+    });
+
+    await this.userPlaceLikeRepository.save(like);
+
+    return { liked: true };
+  }
+
+  async toggleSave(userId: number, placeId: string) {
+    const place = await this.placeRepository.findOne({
+      where: { id: placeId },
+    });
+
+    if (!place) {
+      throw new NotFoundException('불명확한 place id 입니다.');
+    }
+
+    const isExist = await this.userPlaceSaveRepository.findOne({
+      where: {
+        user: userId as any,
+        place: placeId as any,
+      },
+    });
+
+    if (isExist) {
+      await this.userPlaceSaveRepository.remove(isExist);
+      return { saved: false };
+    }
+
+    const like = this.userPlaceSaveRepository.create({
+      user: userId as any,
+      place: placeId as any,
+    });
+
+    await this.userPlaceSaveRepository.save(like);
+
+    return { saved: true };
+  }
+
+  async createOrUpdateMemo(
+    userId: number,
+    placeId: string,
+    createOrUpdatePlaceMemoDto: CreateOrUpdatePlaceMemoDto,
+  ) {
+    const place = await this.placeRepository.findOne({
+      where: { id: placeId },
+    });
+
+    if (!place) {
+      throw new NotFoundException('불명확한 place id 입니다.');
+    }
+
+    const isExist = await this.userPlaceMemoRepository.findOne({
+      where: {
+        user: userId as any,
+        place: placeId as any,
+      },
+    });
+
+    if (isExist) {
+      await this.userPlaceMemoRepository.update(isExist, {
+        text: createOrUpdatePlaceMemoDto.text,
+      });
+
+      return { text: createOrUpdatePlaceMemoDto.text };
+    }
+
+    const memo = this.userPlaceMemoRepository.create({
+      user: userId as any,
+      place: placeId as any,
+      text: createOrUpdatePlaceMemoDto.text,
+    });
+
+    await this.userPlaceMemoRepository.save(memo);
+
+    return { text: createOrUpdatePlaceMemoDto.text };
+  }
+
+  async deleteMemo(userId: number, placeId: string) {
+    const place = await this.placeRepository.findOne({
+      where: { id: placeId },
+    });
+
+    if (!place) {
+      throw new NotFoundException('불명확한 place id 입니다.');
+    }
+
+    const isExist = await this.userPlaceMemoRepository.findOne({
+      where: {
+        user: userId as any,
+        place: placeId as any,
+      },
+    });
+
+    if (!isExist) {
+      throw new NotFoundException('memo가 존재하지 않습니다.');
+    }
+
+    await this.userPlaceMemoRepository.remove(isExist);
+
+    return {
+      memo: 'deleted',
+    };
   }
 
   @MinimumRole(Role.SUPER)

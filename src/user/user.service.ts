@@ -13,13 +13,15 @@ import { ConfigService } from '@nestjs/config';
 import { envVariables } from 'src/common/const/env.const';
 import { CommonService } from 'src/common/common.service';
 
-import { instanceToPlain } from 'class-transformer';
+import { Place } from 'src/place/entities/place.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Place)
+    private readonly placeRepository: Repository<Place>,
     private readonly configService: ConfigService,
     private readonly commonService: CommonService,
   ) {}

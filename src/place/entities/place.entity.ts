@@ -13,6 +13,7 @@ import { PlacePlaceType } from './place-place-type.entity';
 import { PlaceType } from 'src/place-type/entities/place-type.entity';
 import { UserPlaceLike } from 'src/user/entities/user-place-like.entity';
 import { UserPlaceSave } from 'src/user/entities/user-place-save.entity';
+import { UserPlaceMemo } from 'src/user/entities/user-place-memo.entity';
 
 @Unique(['name', 'isModern'])
 @Entity()
@@ -61,4 +62,7 @@ export class Place {
 
   @OneToMany(() => UserPlaceSave, (ups) => ups.user)
   savedUsers: UserPlaceLike[];
+
+  @OneToMany(() => UserPlaceMemo, (ups) => ups.user)
+  memoedUsers: UserPlaceMemo[];
 }
