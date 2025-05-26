@@ -35,7 +35,9 @@ export class PlaceTypeService {
   async findAll(dto: PagePaginationDto) {
     const { limit, page } = dto;
 
-    const qb = this.placeTypeRepository.createQueryBuilder();
+    const qb = this.placeTypeRepository
+      .createQueryBuilder('placeType')
+      .loadRelationCountAndMap('placeType.placeCount', 'placeType.places');
 
     this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
 
