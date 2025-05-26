@@ -14,7 +14,7 @@ import * as pLimit from 'p-limit';
 import { Observable, Subject, map } from 'rxjs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, ILike, In, Repository } from 'typeorm';
 import { CommonService } from 'src/common/common.service';
 import { PlaceType } from 'src/place-type/entities/place-type.entity';
 import { PlacePlaceType } from './entities/place-place-type.entity';
@@ -35,6 +35,7 @@ import { UserPlaceLike } from 'src/user/entities/user-place-like.entity';
 import { UserPlaceSave } from 'src/user/entities/user-place-save.entity';
 import { UserPlaceMemo } from 'src/user/entities/user-place-memo.entity';
 import { CreateOrUpdatePlaceMemoDto } from './dto/create-or-update-place-memo.dto';
+import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
 
 @Injectable()
 export class PlaceService {
@@ -812,5 +813,33 @@ export class PlaceService {
 
   delay(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async getPlacePrefixCounts() {
+    // 🔹 1. 메인 결과: prefix + count
+    const rawResult = await this.placeRepository.query(
+      `
+      SELECT
+        LOWER(LEFT(name, 1)) AS prefix,
+        COUNT(*) AS "placeCount"
+      FROM place
+      GROUP BY prefix
+      ORDER BY prefix ASC
+    `,
+    );
+
+    // 🔹 2. 전체 prefix 개수 (a~z 중 사용된 개수)
+    const totalResult = await this.placeRepository.query(`
+      SELECT COUNT(*) FROM (
+        SELECT LOWER(LEFT(name, 1)) AS prefix
+        FROM place
+        GROUP BY prefix
+      ) AS sub
+    `);
+
+    return {
+      total: Number(totalResult[0].count),
+      data: rawResult, // ex) [{ prefix: "a", placeCount: 12 }]
+    };
   }
 }

@@ -38,6 +38,12 @@ export class PlaceController {
   }
 
   @Public()
+  @Get('prefix-count')
+  getPlacePrefixCounts() {
+    return this.placeService.getPlacePrefixCounts();
+  }
+
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.placeService.findOne(id);
