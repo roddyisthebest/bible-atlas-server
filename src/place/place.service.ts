@@ -100,12 +100,14 @@ export class PlaceService {
   }
 
   async findAll(getPlacesDto: GetPlacesDto) {
-    const { limit, page, name, isModern, stereo, typeIds } = getPlacesDto;
+    const { limit, page, name, isModern, stereo, typeIds, prefix } =
+      getPlacesDto;
 
     const qb = this.placeRepository
       .createQueryBuilder('place')
       .leftJoinAndSelect('place.types', 'placePlaceType')
-      .leftJoinAndSelect('placePlaceType.placeType', 'placeType');
+      .leftJoinAndSelect('placePlaceType.placeType', 'placeType')
+      .distinct(true);
 
     if (name) {
       qb.andWhere('place.name ILIKE :name', { name: `%${name}%` });
@@ -127,7 +129,7 @@ export class PlaceService {
       const validTypeIds = validTypes.map((pt) => pt.id);
 
       if (validTypeIds.length > 0) {
-        qb.innerJoin('place.types', 'placePlaceType').andWhere(
+        qb.leftJoin('place.types', 'placePlaceType').andWhere(
           'placePlaceType.placeTypeId IN (:...validTypeIds)',
           { validTypeIds },
         );
@@ -135,6 +137,12 @@ export class PlaceService {
         // 아무 유효 ID 없으면 결과 없게끔
         qb.where('1 = 0');
       }
+    }
+
+    if (prefix) {
+      qb.andWhere(`LOWER(LEFT(place.name, 1)) = :prefix`, {
+        prefix: prefix.toLowerCase(),
+      });
     }
 
     this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
@@ -153,6 +161,10 @@ export class PlaceService {
 
   async findMyPlaces(userId: number, getMyPlacesDto: GetMyPlacesDto) {
     const { limit, page, filter } = getMyPlacesDto;
+
+    await this.delay(3000);
+
+    // throw new BadRequestException('heello');
 
     const qb = this.placeRepository
       .createQueryBuilder('place')
@@ -207,6 +219,8 @@ export class PlaceService {
   }
 
   async findOne(id: string) {
+    await this.delay(3000);
+
     const place = await this.placeRepository.findOne({
       where: { id },
       relations: ['types', 'types.placeType'],

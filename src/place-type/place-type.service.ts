@@ -35,6 +35,11 @@ export class PlaceTypeService {
   async findAll(dto: PagePaginationDto) {
     const { limit, page } = dto;
 
+    // await this.delay(3000);
+    // throw new BadRequestException(
+    //   '키키키키키키키키ㅣ키키키ㅣ키키키키ㅣ키키키ㅣ키키키키ㅣㅣㅁㄴㅇㅁㄴㅇㅁㄴㅇㄴㅇㄴㅇㄴ',
+    // );
+
     const qb = this.placeTypeRepository
       .createQueryBuilder('placeType')
       .loadRelationCountAndMap('placeType.placeCount', 'placeType.places');
@@ -49,6 +54,10 @@ export class PlaceTypeService {
       limit,
       data: instanceToPlain(data),
     };
+  }
+
+  delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async findOne(id: number) {

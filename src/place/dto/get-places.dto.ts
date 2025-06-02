@@ -25,4 +25,8 @@ export class GetPlacesDto extends PagePaginationDto {
   @IsArray()
   @IsNumber({}, { each: true })
   typeIds: number[];
+
+  @IsString()
+  @IsOptional()
+  prefix: string;
 }
