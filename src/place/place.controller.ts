@@ -45,8 +45,13 @@ export class PlaceController {
 
   @Public()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.placeService.findOne(id);
+  findOne(@Param('id') id: string, @UserId({ isPublic: true }) userId: number) {
+    return this.placeService.findOne(id, userId);
+  }
+
+  @Get(':id/user')
+  findRelatedUserInfo(@Param('id') id: string, @UserId() userId: number) {
+    return this.placeService.findRelatedUserInfo(id, userId);
   }
 
   @Patch(':id')

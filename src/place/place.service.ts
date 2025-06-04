@@ -218,19 +218,87 @@ export class PlaceService {
     };
   }
 
-  async findOne(id: string) {
-    await this.delay(3000);
+  async findOne(id: string, userId: number | undefined | null) {
+    // await this.delay(3000);
 
     const place = await this.placeRepository.findOne({
       where: { id },
-      relations: ['types', 'types.placeType'],
+      relations: [
+        'types',
+        'types.placeType',
+        'childRelations',
+        'childRelations.child',
+        'childRelations.child.types',
+        'childRelations.child.types.placeType',
+        'parentRelations',
+        'parentRelations.parent',
+        'parentRelations.parent.types',
+        'parentRelations.parent.types.placeType',
+      ],
     });
 
     if (!place) {
       throw new NotFoundException('존재하지 않는 id값의 장소입니다.');
     }
 
-    return { ...place, types: place.types.map((ppt) => ppt.placeType) };
+    const response = {
+      ...place,
+      childRelations: place.childRelations.map((rel) => ({
+        ...rel,
+        child: {
+          ...rel.child,
+          types: rel.child.types.map((ppt) => ppt.placeType),
+        },
+      })),
+      parentRelations: place.parentRelations.map((rel) => ({
+        ...rel,
+        parent: {
+          ...rel.parent,
+          types: rel.parent.types.map((ppt) => ppt.placeType),
+        },
+      })),
+      types: place.types.map((ppt) => ppt.placeType),
+    };
+
+    if (!userId) {
+      return response;
+    }
+
+    const userInfo = await this.findRelatedUserInfo(id, userId);
+
+    return {
+      ...response,
+      ...userInfo,
+    };
+  }
+
+  async findRelatedUserInfo(id: string, userId: number) {
+    const [isLiked, isSaved, memo] = await Promise.all([
+      this.userPlaceLikeRepository.findOne({
+        where: {
+          user: userId as any,
+          place: id as any,
+        },
+      }),
+      this.userPlaceSaveRepository.findOne({
+        where: {
+          user: userId as any,
+          place: id as any,
+        },
+      }),
+      this.userPlaceMemoRepository.findOne({
+        where: {
+          user: userId as any,
+          place: id as any,
+        },
+      }),
+    ]);
+
+    return {
+      isLiked: !!isLiked,
+      isSaved: !!isSaved,
+      memo,
+    };
   }
 
   @MinimumRole(Role.SUPER)
@@ -287,7 +355,7 @@ export class PlaceService {
 
   @MinimumRole(Role.SUPER)
   async remove(id: string) {
-    await this.findOne(id);
+    await this.findOne(id, null);
 
     this.placeRepository.delete({ id });
 
@@ -326,6 +394,7 @@ export class PlaceService {
   }
 
   async toggleSave(userId: number, placeId: string) {
+    await this.delay(2000);
     const place = await this.placeRepository.findOne({
       where: { id: placeId },
     });

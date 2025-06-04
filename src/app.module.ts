@@ -33,6 +33,7 @@ import { UserPlaceLike } from './user/entities/user-place-like.entity';
 import { UserPlaceSave } from './user/entities/user-place-save.entity';
 import { PlaceReport } from './place/entities/place-report.entity';
 import { UserPlaceMemo } from './user/entities/user-place-memo.entity';
+import { AttatchUserWithNoErrorMiddleware } from './auth/middleware/attach-user-with-no-error.middleware';
 
 @Module({
   imports: [
@@ -122,5 +123,7 @@ export class AppModule implements NestModule {
         },
       )
       .forRoutes('*');
+
+    consumer.apply(AttatchUserWithNoErrorMiddleware).forRoutes('place/:id');
   }
 }
