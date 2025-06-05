@@ -20,6 +20,7 @@ import { GetPlacesDto } from './dto/get-places.dto';
 import { MinimumRole } from 'src/auth/decorator/minimun-role.decorator';
 import { Role } from 'src/user/entities/user.entity';
 import { CreateOrUpdatePlaceMemoDto } from './dto/create-or-update-place-memo.dto';
+import { GetVerseDto } from './dto/get-verse.dto';
 
 @Controller('place')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -41,6 +42,12 @@ export class PlaceController {
   @Get('prefix-count')
   getPlacePrefixCounts() {
     return this.placeService.getPlacePrefixCounts();
+  }
+
+  @Public()
+  @Get('bible-verse')
+  getBibleVerse(@Query() getVerseDto: GetVerseDto) {
+    return this.placeService.getBibleVerse(getVerseDto);
   }
 
   @Public()

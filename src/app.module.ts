@@ -118,6 +118,10 @@ export class AppModule implements NestModule {
           method: RequestMethod.GET,
         },
         {
+          path: 'place/bible-verse',
+          method: RequestMethod.GET,
+        },
+        {
           path: 'place/:id',
           method: RequestMethod.GET,
         },

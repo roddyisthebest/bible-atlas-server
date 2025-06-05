@@ -30,12 +30,13 @@ import {
   AiPlaceData,
 } from './types/ai-place-file.type';
 import { GetMyPlacesDto } from './dto/get-my-places.dto';
-import { PlaceFilter } from './const/place.const';
+import { BibleBook, PlaceFilter } from './const/place.const';
 import { UserPlaceLike } from 'src/user/entities/user-place-like.entity';
 import { UserPlaceSave } from 'src/user/entities/user-place-save.entity';
 import { UserPlaceMemo } from 'src/user/entities/user-place-memo.entity';
 import { CreateOrUpdatePlaceMemoDto } from './dto/create-or-update-place-memo.dto';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
+import { GetVerseDto } from './dto/get-verse.dto';
 
 @Injectable()
 export class PlaceService {
@@ -56,6 +57,8 @@ export class PlaceService {
 
   private readonly baseURL = 'https://www.openbible.info';
   private readonly geoJsonBaseURL = 'https://a.openbible.info/geo/data';
+
+  private readonly bibleURL = 'https://ibibles.net/quote.php';
   private readonly logger = new Logger(PlaceService.name);
 
   private progressStreams = new Map<number, Subject<{ progress: number }>>();
@@ -100,6 +103,8 @@ export class PlaceService {
   }
 
   async findAll(getPlacesDto: GetPlacesDto) {
+    await this.delay(3000);
+
     const { limit, page, name, isModern, stereo, typeIds, prefix } =
       getPlacesDto;
 
@@ -924,5 +929,30 @@ export class PlaceService {
       total: Number(totalResult[0].count),
       data: rawResult, // ex) [{ prefix: "a", placeCount: 12 }]
     };
+  }
+
+  async getBibleVerse(getVerseDto: GetVerseDto) {
+    const { verse, book, chapter, version } = getVerseDto;
+
+    const verseBook = BibleBook[getVerseDto.book]; // 'jude'
+
+    try {
+      const res = await axios.get(
+        `${this.bibleURL}?${version}-${verseBook}/${chapter}:${verse}`,
+      );
+
+      const $ = cheerio.load(res.data);
+      const small = $('small')
+        .filter((_, el) => $(el).text().trim() === `${chapter}:${verse}`)
+        .get(0); // 첫 번째 small 엘리먼트
+
+      const verseText =
+        small?.next && small.next.type === 'text' && small.next.data?.trim();
+
+      return { text: verseText };
+    } catch (e) {
+      this.logger.error('❌ Failed to fetch bible verse from web', e);
+      throw new ConflictException('Failed to fetch bible verse from web', e);
+    }
   }
 }
