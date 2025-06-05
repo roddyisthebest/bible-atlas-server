@@ -934,7 +934,7 @@ export class PlaceService {
   async getBibleVerse(getVerseDto: GetVerseDto) {
     const { verse, book, chapter, version } = getVerseDto;
 
-    const verseBook = BibleBook[getVerseDto.book]; // 'jude'
+    const verseBook = BibleBook[book]; // 'jude'
 
     try {
       const res = await axios.get(
