@@ -33,6 +33,9 @@ export class Place {
   @Column({ nullable: true })
   koreanDescription: string;
 
+  @Column({ nullable: true })
+  imageTitle: string;
+
   @Column({ default: PlaceStereo.parent })
   stereo: PlaceStereo;
 
