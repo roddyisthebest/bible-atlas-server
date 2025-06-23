@@ -14,7 +14,16 @@ import * as pLimit from 'p-limit';
 import { Observable, Subject, map } from 'rxjs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
-import { DataSource, ILike, In, Repository } from 'typeorm';
+import {
+  DataSource,
+  FeatureCollection,
+  GeoJSON,
+  ILike,
+  In,
+  IsNull,
+  Not,
+  Repository,
+} from 'typeorm';
 import { CommonService } from 'src/common/common.service';
 import { PlaceType } from 'src/place-type/entities/place-type.entity';
 import { PlacePlaceType } from './entities/place-place-type.entity';
@@ -37,6 +46,7 @@ import { UserPlaceMemo } from 'src/user/entities/user-place-memo.entity';
 import { CreateOrUpdatePlaceMemoDto } from './dto/create-or-update-place-memo.dto';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
 import { GetVerseDto } from './dto/get-verse.dto';
+import * as https from 'https'; // ✅ 이거 추가!
 
 @Injectable()
 export class PlaceService {
@@ -103,7 +113,7 @@ export class PlaceService {
   }
 
   async findAll(getPlacesDto: GetPlacesDto) {
-    await this.delay(3000);
+    // await this.delay(1000);
 
     const { limit, page, name, isModern, stereo, typeIds, prefix } =
       getPlacesDto;
@@ -164,10 +174,32 @@ export class PlaceService {
     };
   }
 
+  async findAllPlacesWithRepPoint() {
+    const qb = this.placeRepository
+      .createQueryBuilder('place')
+      .leftJoinAndSelect('place.types', 'placePlaceType')
+      .leftJoinAndSelect('placePlaceType.placeType', 'placeType')
+      .where('place.latitude IS NOT NULL')
+      .andWhere('place.longitude IS NOT NULL')
+      .distinct(true);
+
+    const [places, total] = await qb.getManyAndCount();
+
+    return {
+      total,
+      page: -1,
+      limit: -1,
+      data: places.map((place) => ({
+        ...place,
+        types: place.types.map((ppt) => ppt.placeType),
+      })),
+    };
+  }
+
   async findMyPlaces(userId: number, getMyPlacesDto: GetMyPlacesDto) {
     const { limit, page, filter } = getMyPlacesDto;
 
-    await this.delay(3000);
+    // await this.delay(3000);
 
     // throw new BadRequestException('heello');
 
@@ -784,18 +816,28 @@ export class PlaceService {
         new Map(parsedDatas.map((item) => [item.id, item])).values(),
       );
 
-      parsedUniquePlaces = uniqueDatas.map(
-        (data) =>
-          ({
-            id: data.id,
-            name: data.name,
-            isModern: data.isModern,
-            description: data.description,
-            koreanDescription: data.koreanDescription,
-            stereo: data.stereo,
-            verse: data.verses?.join(', '),
-          }) as Place,
-      );
+      parsedUniquePlaces = uniqueDatas.map((data) => {
+        const { latitude, longitude } = this.getRepresentativePoint(
+          data.geojsonText,
+        );
+
+        const hasValidCoordinates = latitude !== null && longitude !== null;
+
+        return {
+          id: data.id,
+          name: data.name,
+          isModern: data.isModern,
+          description: data.description,
+          koreanDescription: data.koreanDescription,
+          stereo: data.stereo,
+          verse: data.verses?.join(', '),
+
+          ...(hasValidCoordinates && {
+            latitude,
+            longitude,
+          }),
+        } as Place;
+      });
 
       parsedPlaceTypes = uniqueDatas.flatMap((data) => data.types);
 
@@ -935,6 +977,7 @@ export class PlaceService {
     const { verse, book, chapter, version } = getVerseDto;
 
     const verseBook = BibleBook[book]; // 'jude'
+    // const agent = new https.Agent({ rejectUnauthorized: false });
 
     try {
       const res = await axios.get(
@@ -954,5 +997,25 @@ export class PlaceService {
       this.logger.error('❌ Failed to fetch bible verse from web', e);
       throw new ConflictException('Failed to fetch bible verse from web', e);
     }
+  }
+
+  getRepresentativePoint(geoJsonText: string) {
+    const geoJson: FeatureCollection = JSON.parse(geoJsonText);
+
+    const representativePointFeature = geoJson.features.find(
+      (feature) => feature.properties?.role === 'representative_point',
+    );
+
+    if (!representativePointFeature) {
+      return { longitude: null, latitude: null };
+    }
+
+    const [longitude, latitude] =
+      representativePointFeature.geometry?.['coordinates'];
+
+    return {
+      longitude,
+      latitude,
+    };
   }
 }

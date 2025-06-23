@@ -48,6 +48,12 @@ export class Place {
   @Column({ nullable: true })
   unknownPlacePossibility: number;
 
+  @Column({ type: 'double precision', nullable: true })
+  latitude: number;
+
+  @Column({ type: 'double precision', nullable: true })
+  longitude: number;
+
   @OneToMany(() => Proposal, (proposal) => proposal.place)
   proposals: Proposal[];
 

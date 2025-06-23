@@ -39,6 +39,12 @@ export class PlaceController {
   }
 
   @Public()
+  @Get('with-representative-point')
+  findAllPlacesWithRepPoint() {
+    return this.placeService.findAllPlacesWithRepPoint();
+  }
+
+  @Public()
   @Get('prefix-count')
   getPlacePrefixCounts() {
     return this.placeService.getPlacePrefixCounts();
