@@ -51,6 +51,7 @@ import { AttatchUserWithNoErrorMiddleware } from './auth/middleware/attach-user-
         [envVariables.accessTokenSecret]: Joi.string().required(),
         [envVariables.refreshTokenSecret]: Joi.string().required(),
         [envVariables.kakaoBaseUrl]: Joi.string().required(),
+        [envVariables.googleBaseUrl]: Joi.string().required(),
         [envVariables.syncProposalCountsCron]: Joi.string().required(),
       }),
     }),
@@ -124,6 +125,10 @@ export class AppModule implements NestModule {
         {
           path: 'place/:id',
           method: RequestMethod.GET,
+        },
+        {
+          path: 'auth/google-login',
+          method: RequestMethod.POST,
         },
       )
       .forRoutes('*');

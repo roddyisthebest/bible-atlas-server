@@ -6,7 +6,7 @@ import {
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Role, User } from 'src/user/entities/user.entity';
+import { Provider, Role, User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -15,6 +15,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -179,6 +180,70 @@ export class AuthService {
     return {
       refreshToken,
       accessToken,
+    };
+  }
+
+  async getGoogleUserInfo(googleIdToken: string) {
+    try {
+      const googleBaseUrl = this.configService.get<string>(
+        envVariables.googleBaseUrl,
+      ) as string;
+
+      const response = await firstValueFrom(
+        this.httpService.get(googleBaseUrl, {
+          params: {
+            id_token: googleIdToken,
+          },
+        }),
+      );
+
+      const { sub, email, name, picture } = response.data;
+
+      return { sub, email, name, picture };
+    } catch {
+      throw new UnauthorizedException('구글 토큰 인증에 실패했습니다.');
+    }
+  }
+
+  async verifyGoogleToken(googleIdToken: string) {
+    const { sub, email, name, picture } =
+      await this.getGoogleUserInfo(googleIdToken);
+
+    let user = await this.userRepository.findOne({
+      where: { provider: Provider.GOOGLE, providerId: sub },
+    });
+
+    if (!user) {
+      user = this.userRepository.create({
+        provider: Provider.GOOGLE,
+        providerId: sub,
+        email,
+        name,
+        avatar: picture,
+      });
+      const createdUser = await this.userRepository.save(user);
+
+      const refreshToken = await this.issueToken(user, true);
+      const accessToken = await this.issueToken(user, false);
+
+      return {
+        user: createdUser,
+        authData: {
+          refreshToken,
+          accessToken,
+        },
+      };
+    }
+
+    const refreshToken = await this.issueToken(user, true);
+    const accessToken = await this.issueToken(user, false);
+
+    return {
+      user,
+      authData: {
+        refreshToken,
+        accessToken,
+      },
     };
   }
 }

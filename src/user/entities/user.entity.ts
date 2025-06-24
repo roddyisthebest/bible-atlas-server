@@ -4,6 +4,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   BeforeInsert,
+  Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Proposal } from 'src/proposal/entities/proposal.entity';
@@ -21,10 +22,22 @@ export enum Role {
   USER,
 }
 
+export enum Provider {
+  APPLE = 'apple',
+  GOOGLE = 'google',
+}
+
+@Index(['provider', 'providerId'], { unique: true })
 @Entity()
 export class User extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ nullable: true })
+  provider: Provider;
+
+  @Column({ nullable: true })
+  providerId: string;
 
   @Column({
     unique: false,
@@ -32,9 +45,7 @@ export class User extends BaseTableEntity {
   })
   name: string;
 
-  @Column({
-    unique: true,
-  })
+  @Column({ unique: true, nullable: true })
   email: string;
 
   @Column({ nullable: true })

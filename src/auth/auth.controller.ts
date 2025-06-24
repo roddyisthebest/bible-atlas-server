@@ -5,6 +5,7 @@ import { BasicToken } from './decorator/basic-token.decorator';
 import { Public } from './decorator/public.decorator';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { VerifyKakaoTokenDto } from './dto/verify-kakao-token.dto';
+import { VerifyGoogleTokenDto } from './dto/verify-google-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -32,5 +33,11 @@ export class AuthController {
   @Post('kakao-login')
   async veriyKakaoToken(@Body() { accessToken }: VerifyKakaoTokenDto) {
     return this.authService.verifyKakaoToken(accessToken);
+  }
+
+  @Public()
+  @Post('google-login')
+  async verifyGoogkeToken(@Body() { idToken }: VerifyGoogleTokenDto) {
+    return this.authService.verifyGoogleToken(idToken);
   }
 }
