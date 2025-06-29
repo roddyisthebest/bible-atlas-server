@@ -15,7 +15,8 @@ import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import axios from 'axios';
+import * as jwt from 'jsonwebtoken';
+const jwksClient = require('jwks-rsa');
 
 @Injectable()
 export class AuthService {
@@ -57,7 +58,6 @@ export class AuthService {
     }
 
     const decoded = Buffer.from(token, 'base64').toString('utf-8');
-
     const tokenSplit = decoded.split(':');
 
     if (tokenSplit.length !== 2) {
@@ -95,7 +95,6 @@ export class AuthService {
 
   async login(rawToken: string) {
     const { email, password } = this.parseBasicToken(rawToken);
-
     const user = await this.authenticate(email, password);
 
     const refreshToken = await this.issueToken(user, true);
@@ -103,16 +102,12 @@ export class AuthService {
 
     return {
       user,
-      authData: {
-        refreshToken,
-        accessToken,
-      },
+      authData: { refreshToken, accessToken },
     };
   }
 
   async register(rawToken: string) {
     const { email, password } = this.parseBasicToken(rawToken);
-
     return this.userService.create({ email, password });
   }
 
@@ -127,9 +122,7 @@ export class AuthService {
       };
 
       const user = { id: payload.sub, role: payload.role };
-
       const accessToken = await this.issueToken(user, false);
-
       return { accessToken };
     } catch (e) {
       switch (e.name) {
@@ -159,7 +152,7 @@ export class AuthService {
         }),
       );
       return data;
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException('카카오 토큰 인증에 실패했습니다.');
     }
   }
@@ -173,14 +166,10 @@ export class AuthService {
     }
 
     const user = await this.userService.create({ email }, true);
-
     const refreshToken = await this.issueToken(user, true);
     const accessToken = await this.issueToken(user, false);
 
-    return {
-      refreshToken,
-      accessToken,
-    };
+    return { refreshToken, accessToken };
   }
 
   async getGoogleUserInfo(googleIdToken: string) {
@@ -191,14 +180,11 @@ export class AuthService {
 
       const response = await firstValueFrom(
         this.httpService.get(googleBaseUrl, {
-          params: {
-            id_token: googleIdToken,
-          },
+          params: { id_token: googleIdToken },
         }),
       );
 
       const { sub, email, name, picture } = response.data;
-
       return { sub, email, name, picture };
     } catch {
       throw new UnauthorizedException('구글 토큰 인증에 실패했습니다.');
@@ -221,18 +207,7 @@ export class AuthService {
         name,
         avatar: picture,
       });
-      const createdUser = await this.userRepository.save(user);
-
-      const refreshToken = await this.issueToken(user, true);
-      const accessToken = await this.issueToken(user, false);
-
-      return {
-        user: createdUser,
-        authData: {
-          refreshToken,
-          accessToken,
-        },
-      };
+      user = await this.userRepository.save(user);
     }
 
     const refreshToken = await this.issueToken(user, true);
@@ -240,10 +215,81 @@ export class AuthService {
 
     return {
       user,
-      authData: {
-        refreshToken,
-        accessToken,
-      },
+      authData: { refreshToken, accessToken },
+    };
+  }
+
+  async getAppleUserInfo(appleToken: string) {
+    try {
+      const appleBaseUrl = this.configService.get<string>(
+        envVariables.appleBaseUrl,
+      ) as string;
+
+      const appBundleId = this.configService.get<string>(
+        envVariables.appBundleId,
+      ) as string;
+
+      const client = jwksClient({
+        jwksUri: `${appleBaseUrl}/auth/keys`,
+        cache: true,
+        rateLimit: true,
+      });
+
+      const decoded = jwt.decode(appleToken, { complete: true });
+
+      if (!decoded || typeof decoded === 'string') {
+        throw new UnauthorizedException('Apple 토큰 포맷이 잘못됐습니다.');
+      }
+
+      const { kid, alg } = decoded.header;
+
+      const key = await new Promise<string>((resolve, reject) => {
+        client.getSigningKey(kid, (err, key) => {
+          if (err) return reject(err);
+          resolve(key?.getPublicKey() as string);
+        });
+      });
+
+      const payload = jwt.verify(appleToken, key, {
+        algorithms: [alg as any],
+        issuer: appleBaseUrl,
+        audience: appBundleId,
+      }) as jwt.JwtPayload;
+
+      return {
+        sub: payload.sub,
+        email: payload.email,
+        name: payload.name,
+      };
+    } catch (e) {
+      console.error('🔴 Apple Token Verification Failed:', e);
+      throw new UnauthorizedException('애플 토큰 인증에 실패했습니다.');
+    }
+  }
+
+  async verifyAppleToken(token: string) {
+    const { sub, email, name } = await this.getAppleUserInfo(token);
+
+    let user = await this.userRepository.findOne({
+      where: { provider: Provider.APPLE, providerId: sub },
+    });
+
+    if (!user) {
+      user = this.userRepository.create({
+        provider: Provider.APPLE,
+        providerId: sub,
+        email: email ?? null,
+        name: name ?? null,
+      });
+      user = await this.userRepository.save(user);
+    }
+
+    const refreshToken = await this.issueToken(user, true);
+    const accessToken = await this.issueToken(user, false);
+
+    return {
+      user,
+      authData: { refreshToken, accessToken },
     };
   }
 }

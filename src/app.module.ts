@@ -52,7 +52,9 @@ import { AttatchUserWithNoErrorMiddleware } from './auth/middleware/attach-user-
         [envVariables.refreshTokenSecret]: Joi.string().required(),
         [envVariables.kakaoBaseUrl]: Joi.string().required(),
         [envVariables.googleBaseUrl]: Joi.string().required(),
+        [envVariables.appleBaseUrl]: Joi.string().required(),
         [envVariables.syncProposalCountsCron]: Joi.string().required(),
+        [envVariables.appBundleId]: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -128,6 +130,10 @@ export class AppModule implements NestModule {
         },
         {
           path: 'auth/google-login',
+          method: RequestMethod.POST,
+        },
+        {
+          path: 'auth/apple-login',
           method: RequestMethod.POST,
         },
       )

@@ -6,6 +6,7 @@ import { Public } from './decorator/public.decorator';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { VerifyKakaoTokenDto } from './dto/verify-kakao-token.dto';
 import { VerifyGoogleTokenDto } from './dto/verify-google-token.dto';
+import { VerifyAppleTokenDto } from './dto/verify-apple-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -39,5 +40,11 @@ export class AuthController {
   @Post('google-login')
   async verifyGoogkeToken(@Body() { idToken }: VerifyGoogleTokenDto) {
     return this.authService.verifyGoogleToken(idToken);
+  }
+
+  @Public()
+  @Post('apple-login')
+  async verifyAppleToken(@Body() { idToken }: VerifyAppleTokenDto) {
+    return this.authService.verifyAppleToken(idToken);
   }
 }

@@ -10,6 +10,9 @@ const accessTokenSecret = 'ACCESS_TOKEN_SECRET';
 const refreshTokenSecret = 'REFRESH_TOKEN_SECRET';
 const kakaoBaseUrl = 'KAKAO_BASE_URL';
 const googleBaseUrl = 'GOOGLE_BASE_URL';
+const appleBaseUrl = 'APPLE_BASE_URL';
+const appBundleId = 'APP_BUNDLE_ID';
+
 const syncProposalCountsCron = 'SYNC_PROPOSAL_COUNTS_CRON';
 
 export const envVariables = {
@@ -25,5 +28,7 @@ export const envVariables = {
   refreshTokenSecret,
   kakaoBaseUrl,
   googleBaseUrl,
+  appleBaseUrl,
   syncProposalCountsCron,
+  appBundleId,
 };
