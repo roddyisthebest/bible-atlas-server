@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -39,7 +40,7 @@ import {
   AiPlaceData,
 } from './types/ai-place-file.type';
 import { GetMyPlacesDto } from './dto/get-my-places.dto';
-import { BibleBook, PlaceFilter } from './const/place.const';
+import { BibleBook, PlaceFilter, PlaceSort } from './const/place.const';
 import { UserPlaceLike } from 'src/user/entities/user-place-like.entity';
 import { UserPlaceSave } from 'src/user/entities/user-place-save.entity';
 import { UserPlaceMemo } from 'src/user/entities/user-place-memo.entity';
@@ -113,16 +114,13 @@ export class PlaceService {
   }
 
   async findAll(getPlacesDto: GetPlacesDto) {
-    // await this.delay(1000);
-
-    const { limit, page, name, isModern, stereo, typeIds, prefix } =
+    const { limit, page, name, isModern, stereo, typeIds, prefix, sort } =
       getPlacesDto;
 
     const qb = this.placeRepository
       .createQueryBuilder('place')
       .leftJoinAndSelect('place.types', 'placePlaceType')
-      .leftJoinAndSelect('placePlaceType.placeType', 'placeType')
-      .distinct(true);
+      .leftJoinAndSelect('placePlaceType.placeType', 'placeType');
 
     if (name) {
       qb.andWhere('place.name ILIKE :name', { name: `%${name}%` });
@@ -136,41 +134,35 @@ export class PlaceService {
       qb.andWhere('place.stereo = :stereo', { stereo });
     }
 
-    if (typeIds && typeIds.length > 0) {
-      const validTypes = await this.placeTypeRepository.find({
-        where: { id: In(typeIds) },
-      });
-
-      const validTypeIds = validTypes.map((pt) => pt.id);
-
-      if (validTypeIds.length > 0) {
-        qb.leftJoin('place.types', 'placePlaceType').andWhere(
-          'placePlaceType.placeTypeId IN (:...validTypeIds)',
-          { validTypeIds },
-        );
-      } else {
-        // 아무 유효 ID 없으면 결과 없게끔
-        qb.where('1 = 0');
-      }
-    }
-
     if (prefix) {
       qb.andWhere(`LOWER(LEFT(place.name, 1)) = :prefix`, {
         prefix: prefix.toLowerCase(),
       });
     }
 
+    if (sort) {
+      if (sort === PlaceSort.like) {
+        qb.andWhere('place.likeCount > 0');
+        qb.orderBy('place.likeCount', 'DESC');
+      } else {
+        qb.orderBy('place.name', sort === PlaceSort.asc ? 'ASC' : 'DESC');
+      }
+    }
+
     this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
 
-    let [data, total] = await qb.getManyAndCount();
+    const [data, total] = await qb.getManyAndCount();
+
+    const editedData = data.map((place) => ({
+      ...place,
+      types: place.types?.map((t) => t.placeType),
+    }));
 
     return {
       total,
       page,
       limit,
-      data: data.map((d) => {
-        return { ...d, types: d.types.map((type) => type.placeType) };
-      }),
+      data: editedData,
     };
   }
 
@@ -278,18 +270,23 @@ export class PlaceService {
       throw new NotFoundException('존재하지 않는 id값의 장소입니다.');
     }
 
+    const likeCount = await this.userPlaceLikeRepository.count({
+      where: { place: place.id } as any,
+    });
+
     const response = {
       ...place,
+      likeCount,
       childRelations: place.childRelations.map((rel) => ({
         ...rel,
-        child: {
+        place: {
           ...rel.child,
           types: rel.child.types.map((ppt) => ppt.placeType),
         },
       })),
       parentRelations: place.parentRelations.map((rel) => ({
         ...rel,
-        parent: {
+        place: {
           ...rel.parent,
           types: rel.parent.types.map((ppt) => ppt.placeType),
         },
@@ -953,6 +950,7 @@ export class PlaceService {
         LOWER(LEFT(name, 1)) AS prefix,
         COUNT(*) AS "placeCount"
       FROM place
+      WHERE stereo = 'parent'
       GROUP BY prefix
       ORDER BY prefix ASC
     `,
@@ -963,6 +961,7 @@ export class PlaceService {
       SELECT COUNT(*) FROM (
         SELECT LOWER(LEFT(name, 1)) AS prefix
         FROM place
+        WHERE stereo = 'parent'
         GROUP BY prefix
       ) AS sub
     `);

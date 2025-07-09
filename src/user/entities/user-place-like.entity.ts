@@ -1,8 +1,10 @@
-import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, PrimaryColumn } from 'typeorm';
 import { User } from './user.entity';
 import { Place } from 'src/place/entities/place.entity';
 
 @Entity()
+// @Index('idx_user_place_user_id', ['user'])
+// @Index('idx_user_place_place_id', ['place'])
 export class UserPlaceLike {
   @PrimaryColumn({
     name: 'userId',

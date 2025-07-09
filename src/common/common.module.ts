@@ -7,9 +7,10 @@ import { Proposal } from 'src/proposal/entities/proposal.entity';
 
 import { Notification } from 'src/notification/entities/notification.entity';
 import { User } from 'src/user/entities/user.entity';
+import { Place } from 'src/place/entities/place.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Proposal, Notification, User])],
+  imports: [TypeOrmModule.forFeature([Proposal, Notification, User, Place])],
   controllers: [CommonController],
   providers: [CommonService, TaskService],
   exports: [CommonService],

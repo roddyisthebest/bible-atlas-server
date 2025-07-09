@@ -7,7 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
-import { PlaceStereo } from '../const/place.const';
+import { PlaceSort, PlaceStereo } from '../const/place.const';
 
 export class GetPlacesDto extends PagePaginationDto {
   @IsString()
@@ -29,4 +29,7 @@ export class GetPlacesDto extends PagePaginationDto {
   @IsString()
   @IsOptional()
   prefix: string;
+
+  @IsEnum(PlaceSort)
+  sort: PlaceSort = PlaceSort.asc;
 }

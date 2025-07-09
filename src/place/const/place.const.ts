@@ -79,6 +79,12 @@ export const enum PlaceType {
   'settlement' = 'settlement',
 }
 
+export enum PlaceSort {
+  'like' = 'like',
+  'desc' = 'desc',
+  'asc' = 'asc',
+}
+
 export enum PlaceFilter {
   'like' = 'like',
   'memo' = 'memo',

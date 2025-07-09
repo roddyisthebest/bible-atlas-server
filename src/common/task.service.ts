@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { Cron } from '@nestjs/schedule';
 import {
-  DEFAULT_SYNC_LOCATION_LIKE_CRON,
+  DEFAULT_SYNC_PLACE_LIKE_CRON,
   DEFAULT_SYNC_PROPOSAL_CRON,
 } from './const/task.const';
 import { Between, DataSource, Repository } from 'typeorm';
@@ -12,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from 'src/notification/entities/notification.entity';
 
 import { Role, User } from 'src/user/entities/user.entity';
+import { Place } from 'src/place/entities/place.entity';
 
 @Injectable()
 export class TaskService {
@@ -25,6 +26,8 @@ export class TaskService {
     private readonly dataSource: DataSource,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Place)
+    private readonly placeRepository: Repository<Place>,
   ) {}
 
   //   @Cron(process.env.SYNC_PROPOSAL_CRON || DEFAULT_SYNC_PROPOSAL_CRON)
@@ -50,21 +53,42 @@ export class TaskService {
   //     }
   //   }
 
-  //   @Cron(process.env.SYNC_LOCATION_LIKE_CRON || DEFAULT_SYNC_LOCATION_LIKE_CRON)
-  //   async handleUpdateLocationLikeCount() {
-  //     try {
-  //       await this.userLocationLikeRepository.query(`
-  //       UPDATE location lo SET "likeCount" = (
-  //         SELECT count(*) FROM user_location_like ull
-  //         WHERE lo.id = ull."locationId"
-  //       )
-  //       `);
+  @Cron(process.env.SYNC_PLACE_LIKE_COUNTS_CRON || DEFAULT_SYNC_PLACE_LIKE_CRON)
+  async handleUpdatePlaceLikeCount() {
+    const queryRunner = this.dataSource.createQueryRunner();
 
-  //       this.logger.log('location like counts updated successfully');
-  //     } catch (error) {
-  //       this.logger.error('❌ Failed to update location like counts:', error);
-  //     }
-  //   }
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1. 모든 likeCount를 0으로 초기화
+      await queryRunner.query(`
+        UPDATE place 
+        SET "likeCount" = 0
+        WHERE "likeCount" != 0
+      `);
+
+      // 2. user_place_like에 있는 count를 기반으로 업데이트
+      await queryRunner.query(`
+        UPDATE place p
+        SET "likeCount" = sub.count
+        FROM (
+          SELECT "placeId", COUNT(*) AS count
+          FROM user_place_like
+          GROUP BY "placeId"
+        ) sub
+        WHERE p.id = sub."placeId" AND p."likeCount" != sub.count
+      `);
+
+      await queryRunner.commitTransaction();
+      this.logger.log('✅ Place like counts updated successfully');
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error('❌ Failed to update place like counts:', error);
+    } finally {
+      await queryRunner.release();
+    }
+  }
 
   //   async sendPushForNotification() {
   //     const now = new Date();

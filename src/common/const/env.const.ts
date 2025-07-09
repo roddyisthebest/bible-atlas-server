@@ -14,6 +14,7 @@ const appleBaseUrl = 'APPLE_BASE_URL';
 const appBundleId = 'APP_BUNDLE_ID';
 
 const syncProposalCountsCron = 'SYNC_PROPOSAL_COUNTS_CRON';
+const syncPlaceLikeCountsCron = 'SYNC_PLACE_LIKE_COUNTS_CRON';
 
 export const envVariables = {
   env,
@@ -30,5 +31,6 @@ export const envVariables = {
   googleBaseUrl,
   appleBaseUrl,
   syncProposalCountsCron,
+  syncPlaceLikeCountsCron,
   appBundleId,
 };

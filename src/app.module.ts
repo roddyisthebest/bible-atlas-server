@@ -53,6 +53,7 @@ import { AttatchUserWithNoErrorMiddleware } from './auth/middleware/attach-user-
         [envVariables.kakaoBaseUrl]: Joi.string().required(),
         [envVariables.googleBaseUrl]: Joi.string().required(),
         [envVariables.appleBaseUrl]: Joi.string().required(),
+        [envVariables.syncPlaceLikeCountsCron]: Joi.string().required(),
         [envVariables.syncProposalCountsCron]: Joi.string().required(),
         [envVariables.appBundleId]: Joi.string().required(),
       }),
