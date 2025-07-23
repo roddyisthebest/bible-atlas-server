@@ -31,9 +31,11 @@ import { PlacePlaceType } from './place/entities/place-place-type.entity';
 import { PlaceType } from './place-type/entities/place-type.entity';
 import { UserPlaceLike } from './user/entities/user-place-like.entity';
 import { UserPlaceSave } from './user/entities/user-place-save.entity';
-import { PlaceReport } from './place/entities/place-report.entity';
+
 import { UserPlaceMemo } from './user/entities/user-place-memo.entity';
 import { AttatchUserWithNoErrorMiddleware } from './auth/middleware/attach-user-with-no-error.middleware';
+import { PlaceReportModule } from './place-report/place-report.module';
+import { PlaceReport } from './place-report/entities/place-report.entity';
 
 @Module({
   imports: [
@@ -93,6 +95,7 @@ import { AttatchUserWithNoErrorMiddleware } from './auth/middleware/attach-user-
     ReportModule,
     PlaceModule,
     PlaceTypeModule,
+    PlaceReportModule,
   ],
   controllers: [],
   providers: [
