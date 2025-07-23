@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 import { BasicToken } from './decorator/basic-token.decorator';
@@ -7,6 +7,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { VerifyKakaoTokenDto } from './dto/verify-kakao-token.dto';
 import { VerifyGoogleTokenDto } from './dto/verify-google-token.dto';
 import { VerifyAppleTokenDto } from './dto/verify-apple-token.dto';
+import { UserId } from 'src/common/decorator/user-id.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -46,5 +47,10 @@ export class AuthController {
   @Post('apple-login')
   async verifyAppleToken(@Body() { idToken }: VerifyAppleTokenDto) {
     return this.authService.verifyAppleToken(idToken);
+  }
+
+  @Delete('withdraw')
+  async withdraw(@UserId() userId: number) {
+    return this.authService.withdraw(userId);
   }
 }

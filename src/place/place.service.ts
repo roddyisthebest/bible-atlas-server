@@ -270,9 +270,11 @@ export class PlaceService {
       throw new NotFoundException('존재하지 않는 id값의 장소입니다.');
     }
 
-    const likeCount = await this.userPlaceLikeRepository.count({
-      where: { place: place.id } as any,
-    });
+    const likeCount = await this.userPlaceLikeRepository
+      .createQueryBuilder('like')
+      .innerJoin('like.user', 'user')
+      .where('like.place = :placeId', { placeId: place.id })
+      .getCount();
 
     const response = {
       ...place,

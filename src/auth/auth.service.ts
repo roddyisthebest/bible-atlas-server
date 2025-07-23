@@ -1,13 +1,15 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Provider, Role, User } from 'src/user/entities/user.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { envVariables } from 'src/common/const/env.const';
@@ -16,6 +18,10 @@ import { UserService } from 'src/user/user.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
+import { UserPlaceLike } from 'src/user/entities/user-place-like.entity';
+import { UserPlaceSave } from 'src/user/entities/user-place-save.entity';
+import { UserPlaceMemo } from 'src/user/entities/user-place-memo.entity';
+import { Proposal } from 'src/proposal/entities/proposal.entity';
 const jwksClient = require('jwks-rsa');
 
 @Injectable()
@@ -27,10 +33,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
     private readonly httpService: HttpService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async authenticate(email: string, password: string) {
-    const user = await this.userRepository.findOne({ where: { email } });
+    const user = await this.userRepository.findOne({
+      where: { email },
+      withDeleted: true,
+    });
 
     if (!user) {
       throw new BadRequestException('잘못된 로그인 정보입니다.');
@@ -95,7 +105,15 @@ export class AuthService {
 
   async login(rawToken: string) {
     const { email, password } = this.parseBasicToken(rawToken);
-    const user = await this.authenticate(email, password);
+    let user = await this.authenticate(email, password);
+
+    let recovered = false;
+
+    if (user.deletedAt) {
+      user.deletedAt = null;
+      user = await this.userRepository.save(user);
+      recovered = true;
+    }
 
     const refreshToken = await this.issueToken(user, true);
     const accessToken = await this.issueToken(user, false);
@@ -103,6 +121,7 @@ export class AuthService {
     return {
       user,
       authData: { refreshToken, accessToken },
+      recovered,
     };
   }
 
@@ -197,6 +216,7 @@ export class AuthService {
 
     let user = await this.userRepository.findOne({
       where: { provider: Provider.GOOGLE, providerId: sub },
+      withDeleted: true,
     });
 
     if (!user) {
@@ -210,12 +230,23 @@ export class AuthService {
       user = await this.userRepository.save(user);
     }
 
+    let recovered = false;
+
+    if (user.deletedAt) {
+      user.deletedAt = null;
+      const updatedUser = await this.userRepository.save(user);
+
+      user = updatedUser;
+      recovered = true;
+    }
+
     const refreshToken = await this.issueToken(user, true);
     const accessToken = await this.issueToken(user, false);
 
     return {
       user,
       authData: { refreshToken, accessToken },
+      recovered,
     };
   }
 
@@ -284,12 +315,52 @@ export class AuthService {
       user = await this.userRepository.save(user);
     }
 
+    let recovered = false;
+
+    if (user.deletedAt) {
+      user.deletedAt = null;
+      const updatedUser = await this.userRepository.save(user);
+
+      user = updatedUser;
+      recovered = true;
+    }
+
     const refreshToken = await this.issueToken(user, true);
     const accessToken = await this.issueToken(user, false);
 
     return {
       user,
       authData: { refreshToken, accessToken },
+      recovered,
     };
+  }
+
+  async withdraw(id: number) {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('존재하지 않는 사용자입니다!');
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      // 1. 유저 soft delete
+      await manager.getRepository(User).softDelete({ id });
+
+      // 2. 좋아요, 북마크, 메모 삭제
+      await manager.getRepository(UserPlaceLike).delete({ user: { id } });
+      await manager.getRepository(UserPlaceSave).delete({ user: { id } });
+      await manager.getRepository(UserPlaceMemo).delete({ user: { id } });
+
+      // // 3. 의견 익명화 처리 (예시)
+      await manager
+        .getRepository(Proposal)
+        .update({ creator: { id } }, { creator: null as any });
+    });
+
+    return id;
+  }
+
+  delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
