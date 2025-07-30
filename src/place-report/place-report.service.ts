@@ -39,7 +39,7 @@ export class PlaceReportService {
       creator: { id: userId },
     });
 
-    return report;
+    return report.id;
   }
 
   async findAll(dto: PagePaginationDto) {

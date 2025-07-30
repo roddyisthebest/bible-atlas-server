@@ -114,7 +114,7 @@ export class PlaceService {
   }
 
   async findAll(getPlacesDto: GetPlacesDto) {
-    const { limit, page, name, isModern, stereo, typeIds, prefix, sort } =
+    const { limit, page, name, isModern, stereo, placeTypes, prefix, sort } =
       getPlacesDto;
 
     const qb = this.placeRepository
@@ -147,6 +147,10 @@ export class PlaceService {
       } else {
         qb.orderBy('place.name', sort === PlaceSort.asc ? 'ASC' : 'DESC');
       }
+    }
+
+    if (placeTypes && placeTypes.length > 0) {
+      qb.andWhere('placeType.name IN (:...placeTypes)', { placeTypes });
     }
 
     this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
@@ -607,7 +611,7 @@ export class PlaceService {
 
           let unknownPlacePossibility: number | null = null;
 
-          const types = $('tr')
+          const raw = $('tr')
             .filter(
               (_, el) =>
                 $(el).find('th').text().trim() === 'Type' ||
@@ -615,8 +619,14 @@ export class PlaceService {
             )
             .find('td')
             .text()
-            .trim()
-            .split(/\s*or\s*/);
+            .trim();
+
+          const types = raw
+            .replace(/\s+or\s+/g, ',')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+
           const response = await axios.get(
             `${this.geoJsonBaseURL}/${place.id}.geojson`,
           );
@@ -830,7 +840,7 @@ export class PlaceService {
           koreanDescription: data.koreanDescription,
           stereo: data.stereo,
           verse: data.verses?.join(', '),
-
+          imageTitle: data.imageTitle,
           ...(hasValidCoordinates && {
             latitude,
             longitude,
@@ -839,7 +849,6 @@ export class PlaceService {
       });
 
       parsedPlaceTypes = uniqueDatas.flatMap((data) => data.types);
-
       uniqueDatas.forEach((data) => {
         const types = data.types;
 
@@ -879,6 +888,7 @@ export class PlaceService {
         ]);
 
         await manager.save(Place, parsedUniquePlaces);
+
         await manager.save(PlaceRelation, parsedRelations);
 
         const uniquePlaceTypes = Array.from(new Set(parsedPlaceTypes)).map(
@@ -913,6 +923,7 @@ export class PlaceService {
         };
       });
     } catch (e) {
+      console.log(e);
       throw new InternalServerErrorException('💾 DB 저장 중 오류 발생', {
         cause: e,
       });

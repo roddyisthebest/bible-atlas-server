@@ -7,7 +7,8 @@ import {
   IsString,
 } from 'class-validator';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
-import { PlaceSort, PlaceStereo } from '../const/place.const';
+import { PlaceSort, PlaceStereo, PlaceType } from '../const/place.const';
+import { Transform } from 'class-transformer';
 
 export class GetPlacesDto extends PagePaginationDto {
   @IsString()
@@ -23,8 +24,9 @@ export class GetPlacesDto extends PagePaginationDto {
 
   @IsOptional()
   @IsArray()
-  @IsNumber({}, { each: true })
-  typeIds: number[];
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  @IsEnum(PlaceType, { each: true })
+  placeTypes: PlaceType[];
 
   @IsString()
   @IsOptional()
