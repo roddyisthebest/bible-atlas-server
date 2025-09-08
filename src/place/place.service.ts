@@ -251,6 +251,33 @@ export class PlaceService {
     };
   }
 
+  async findMyCollectionPlaceIds(userId: number) {
+    const [likedIdsRaw, savedIdsRaw, memoedIdsRaw] = await Promise.all([
+      this.dataSource.query(
+        `SELECT "placeId" FROM "user_place_like" WHERE "userId" = $1`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT "placeId" FROM "user_place_save" WHERE "userId" = $1`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT "placeId" FROM "user_place_memo" WHERE "userId" = $1`,
+        [userId],
+      ),
+    ]);
+
+    const liked = likedIdsRaw.map((row) => String(row.placeId));
+    const bookmarked = savedIdsRaw.map((row) => String(row.placeId));
+    const memoed = memoedIdsRaw.map((row) => String(row.placeId));
+
+    return {
+      liked,
+      bookmarked,
+      memoed,
+    };
+  }
+
   async findOne(id: string, userId: number | undefined | null) {
     // await this.delay(3000);
 

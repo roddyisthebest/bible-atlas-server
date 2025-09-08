@@ -49,6 +49,11 @@ export class UserController {
     return this.placeService.findMyPlaces(userId, getMyPlacesDto);
   }
 
+  @Get('me/collection-place-ids')
+  findMyCollectionPlaceIds(@UserId() userId: number) {
+    return this.placeService.findMyCollectionPlaceIds(userId);
+  }
+
   @MinimumRole(Role.SUPER)
   @Get(':id')
   findOne(@Param('id') id: number) {
