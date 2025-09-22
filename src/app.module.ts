@@ -36,6 +36,7 @@ import { UserPlaceMemo } from './user/entities/user-place-memo.entity';
 import { AttatchUserWithNoErrorMiddleware } from './auth/middleware/attach-user-with-no-error.middleware';
 import { PlaceReportModule } from './place-report/place-report.module';
 import { PlaceReport } from './place-report/entities/place-report.entity';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -97,7 +98,7 @@ import { PlaceReport } from './place-report/entities/place-report.entity';
     PlaceTypeModule,
     PlaceReportModule,
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RoleGuard },
@@ -139,6 +140,10 @@ export class AppModule implements NestModule {
         {
           path: 'auth/apple-login',
           method: RequestMethod.POST,
+        },
+        {
+          path: 'health',
+          method: RequestMethod.GET,
         },
       )
       .forRoutes('*');
