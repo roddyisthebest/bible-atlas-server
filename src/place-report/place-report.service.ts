@@ -32,12 +32,17 @@ export class PlaceReportService {
       throw new NotFoundException('존재하지 않은 장소입니다.');
     }
 
-    const report = await this.placeReportRepository.save({
+    const reportData: any = {
       type,
       reason,
       place,
-      creator: { id: userId },
-    });
+    };
+
+    if (userId) {
+      reportData.creator = { id: userId };
+    }
+
+    const report = await this.placeReportRepository.save(reportData);
 
     return report.id;
   }

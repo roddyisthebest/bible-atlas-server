@@ -25,7 +25,7 @@ export class PlaceReport extends BaseTableEntity {
 
   @ManyToOne(() => User, (user) => user.id, {
     cascade: true,
-    nullable: false,
+    nullable: true,
     onDelete: 'CASCADE',
   })
   creator: User;

@@ -15,7 +15,6 @@ import { UserPlaceLike } from 'src/user/entities/user-place-like.entity';
 import { UserPlaceSave } from 'src/user/entities/user-place-save.entity';
 import { UserPlaceMemo } from 'src/user/entities/user-place-memo.entity';
 
-@Unique(['name', 'isModern'])
 @Entity()
 export class Place {
   @PrimaryColumn()
@@ -23,6 +22,9 @@ export class Place {
 
   @Column({ nullable: false })
   name: string;
+
+  @Column({ nullable: true })
+  koreanName: string;
 
   @Column({ default: false })
   isModern: boolean;

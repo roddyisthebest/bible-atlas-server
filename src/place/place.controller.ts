@@ -51,6 +51,12 @@ export class PlaceController {
   }
 
   @Public()
+  @Get('bible-book-count')
+  getPlaceBibleBookCounts() {
+    return this.placeService.getPlaceBibleBookCounts();
+  }
+
+  @Public()
   @Get('bible-verse')
   getBibleVerse(@Query() getVerseDto: GetVerseDto) {
     return this.placeService.getBibleVerse(getVerseDto);
@@ -60,6 +66,12 @@ export class PlaceController {
   @Get(':id')
   findOne(@Param('id') id: string, @UserId({ isPublic: true }) userId: number) {
     return this.placeService.findOne(id, userId);
+  }
+
+  @Public()
+  @Get(':id/geojson')
+  findGeoJSON(@Param('id') id: string) {
+    return this.placeService.findGeoJSON(id);
   }
 
   @Get(':id/user')

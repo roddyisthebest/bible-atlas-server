@@ -17,16 +17,18 @@ import { UserId } from 'src/common/decorator/user-id.decorator';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
 import { MinimumRole } from 'src/auth/decorator/minimun-role.decorator';
 import { Role } from 'src/user/entities/user.entity';
+import { Public } from 'src/auth/decorator/public.decorator';
 
 @Controller('place-report')
 @UseInterceptors(ClassSerializerInterceptor)
 export class PlaceReportController {
   constructor(private readonly placeReportService: PlaceReportService) {}
 
+  @Public()
   @Post()
   create(
     @Body() createPlaceReportDto: CreatePlaceReportDto,
-    @UserId() userId: number,
+    @UserId({ isPublic: true }) userId: number,
   ) {
     return this.placeReportService.create(createPlaceReportDto, userId);
   }

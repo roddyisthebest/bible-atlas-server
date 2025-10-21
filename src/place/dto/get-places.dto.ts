@@ -7,7 +7,12 @@ import {
   IsString,
 } from 'class-validator';
 import { PagePaginationDto } from 'src/common/dto/page-pagination.dto';
-import { PlaceSort, PlaceStereo, PlaceType } from '../const/place.const';
+import {
+  BibleBook,
+  PlaceSort,
+  PlaceStereo,
+  PlaceType,
+} from '../const/place.const';
 import { Transform } from 'class-transformer';
 
 export class GetPlacesDto extends PagePaginationDto {
@@ -17,10 +22,11 @@ export class GetPlacesDto extends PagePaginationDto {
 
   @IsBoolean()
   @IsOptional()
-  isModern: boolean;
+  isModern: boolean = false;
 
   @IsEnum(PlaceStereo)
-  stereo: PlaceStereo = PlaceStereo.parent;
+  @IsOptional()
+  stereo: PlaceStereo;
 
   @IsOptional()
   @IsArray()
@@ -34,4 +40,8 @@ export class GetPlacesDto extends PagePaginationDto {
 
   @IsEnum(PlaceSort)
   sort: PlaceSort = PlaceSort.asc;
+
+  @IsOptional()
+  @IsEnum(BibleBook)
+  bibleBook: BibleBook;
 }

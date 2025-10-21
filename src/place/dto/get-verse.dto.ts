@@ -3,7 +3,7 @@ import { BibleBook, BibleVersion } from '../const/place.const';
 
 export class GetVerseDto {
   @IsNotEmpty()
-  @IsIn(Object.keys(BibleBook))
+  @IsIn(Object.values(BibleBook))
   book: keyof typeof BibleBook;
 
   @IsNotEmpty()

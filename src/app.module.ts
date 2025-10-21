@@ -134,6 +134,10 @@ export class AppModule implements NestModule {
           method: RequestMethod.GET,
         },
         {
+          path: 'place/:id/geojson',
+          method: RequestMethod.GET,
+        },
+        {
           path: 'auth/google-login',
           method: RequestMethod.POST,
         },

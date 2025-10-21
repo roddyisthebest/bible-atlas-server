@@ -18,13 +18,13 @@ import { Place } from './entities/place.entity';
 import {
   DataSource,
   FeatureCollection,
-  GeoJSON,
   ILike,
   In,
   IsNull,
   Not,
   Repository,
 } from 'typeorm';
+import { GeoJSON } from './types/geojson.type';
 import { CommonService } from 'src/common/common.service';
 import { PlaceType } from 'src/place-type/entities/place-type.entity';
 import { PlacePlaceType } from './entities/place-place-type.entity';
@@ -114,8 +114,17 @@ export class PlaceService {
   }
 
   async findAll(getPlacesDto: GetPlacesDto) {
-    const { limit, page, name, isModern, stereo, placeTypes, prefix, sort } =
-      getPlacesDto;
+    const {
+      limit,
+      page,
+      name,
+      isModern,
+      stereo,
+      placeTypes,
+      prefix,
+      sort,
+      bibleBook,
+    } = getPlacesDto;
 
     const qb = this.placeRepository
       .createQueryBuilder('place')
@@ -123,7 +132,9 @@ export class PlaceService {
       .leftJoinAndSelect('placePlaceType.placeType', 'placeType');
 
     if (name) {
-      qb.andWhere('place.name ILIKE :name', { name: `%${name}%` });
+      qb.andWhere('(place.name ILIKE :name OR place.koreanName ILIKE :name)', {
+        name: `%${name}%`,
+      });
     }
 
     if (typeof isModern === 'boolean') {
@@ -140,7 +151,35 @@ export class PlaceService {
       });
     }
 
-    if (sort) {
+    if (bibleBook) {
+      qb.andWhere(`place.verse ILIKE :bibleBook`, {
+        bibleBook: `%${bibleBook}%`,
+      });
+
+      // 해당 성경의 첫 번째 구절을 찾아서 정렬
+      qb.addSelect(
+        `
+        CASE 
+          WHEN POSITION('${bibleBook}.' IN place.verse) > 0 THEN
+            CAST(SPLIT_PART(SPLIT_PART(SUBSTRING(place.verse FROM POSITION('${bibleBook}.' IN place.verse)), '.', 2), ',', 1) AS INTEGER)
+          ELSE 999
+        END
+        `,
+        'chapter',
+      )
+        .addSelect(
+          `
+        CASE 
+          WHEN POSITION('${bibleBook}.' IN place.verse) > 0 THEN
+            CAST(SPLIT_PART(SPLIT_PART(SUBSTRING(place.verse FROM POSITION('${bibleBook}.' IN place.verse)), '.', 3), ',', 1) AS INTEGER)
+          ELSE 999
+        END
+        `,
+          'verse_num',
+        )
+        .orderBy('chapter', 'ASC')
+        .addOrderBy('verse_num', 'ASC');
+    } else if (sort) {
       if (sort === PlaceSort.like) {
         qb.andWhere('place.likeCount > 0');
         qb.orderBy('place.likeCount', 'DESC');
@@ -177,15 +216,32 @@ export class PlaceService {
       .leftJoinAndSelect('placePlaceType.placeType', 'placeType')
       .where('place.latitude IS NOT NULL')
       .andWhere('place.longitude IS NOT NULL')
+      .andWhere('place.isModern = false')
+      .orderBy('place.likeCount', 'DESC')
       .distinct(true);
 
-    const [places, total] = await qb.getManyAndCount();
+    const [allPlaces] = await qb.getManyAndCount();
+
+    const filteredPlaces: Place[] = [];
+    const minDistance = 0.1; // 약 10km 간격
+
+    for (const place of allPlaces) {
+      const isTooClose = filteredPlaces.some((existing) => {
+        const latDiff = Math.abs(existing.latitude - place.latitude);
+        const lngDiff = Math.abs(existing.longitude - place.longitude);
+        return latDiff < minDistance && lngDiff < minDistance;
+      });
+
+      if (!isTooClose) {
+        filteredPlaces.push(place);
+      }
+    }
 
     return {
-      total,
+      total: filteredPlaces.length,
       page: -1,
       limit: -1,
-      data: places.map((place) => ({
+      data: filteredPlaces.map((place) => ({
         ...place,
         types: place.types.map((ppt) => ppt.placeType),
       })),
@@ -461,7 +517,6 @@ export class PlaceService {
   }
 
   async toggleSave(userId: number, placeId: string) {
-    await this.delay(2000);
     const place = await this.placeRepository.findOne({
       where: { id: placeId },
     });
@@ -556,6 +611,83 @@ export class PlaceService {
     return {
       memo: 'deleted',
     };
+  }
+
+  async findGeoJSON(placeId: string): Promise<FeatureCollection> {
+    let geojsonObject: FeatureCollection;
+
+    try {
+      // GeoJSON 데이터 가져오기
+      const response = await axios.get(
+        `${this.geoJsonBaseURL}/${placeId}.geojson`,
+      );
+      geojsonObject = response.data;
+    } catch (e) {
+      throw new NotFoundException('해당 장소의 GeoJSON이 존재하지 않습니다.');
+    }
+
+    // 장소 정보 조회
+    const place = await this.placeRepository.findOne({
+      where: { id: placeId },
+      relations: [
+        'childRelations',
+        'childRelations.child',
+        'parentRelations',
+        'parentRelations.parent',
+      ],
+    });
+
+    console.log(place);
+
+    if (!place) {
+      throw new NotFoundException('존재하지 않는 장소입니다.');
+    }
+
+    if (place.childRelations.length > 0 || place.parentRelations.length > 0) {
+      const features = [...geojsonObject.features].map((feature) => {
+        const placeId = feature.properties?.id.split('.')?.[0];
+
+        if (!placeId) {
+          return feature;
+        }
+
+        const parentRelation = place.parentRelations.find(
+          (rel) => rel.parent.id === placeId,
+        );
+
+        if (parentRelation) {
+          return {
+            ...feature,
+            properties: {
+              ...feature.properties,
+              isParent: true,
+              possibility: parentRelation.possibility,
+            },
+          };
+        }
+
+        const childRelation = place.childRelations.find(
+          (rel) => rel.child.id === placeId,
+        );
+
+        if (childRelation) {
+          return {
+            ...feature,
+            properties: {
+              ...feature.properties,
+              isParent: false,
+              possibility: childRelation.possibility,
+            },
+          };
+        }
+
+        return feature;
+      });
+
+      return { ...geojsonObject, features };
+    }
+
+    return geojsonObject;
   }
 
   @MinimumRole(Role.SUPER)
@@ -848,9 +980,42 @@ export class PlaceService {
       );
 
       const parsedDatas = parsedFiles.flatMap((parse) => parse.data);
-      const uniqueDatas = Array.from(
-        new Map(parsedDatas.map((item) => [item.id, item])).values(),
-      );
+
+      const uniqueDatas: AiPlaceData[] = [];
+
+      parsedDatas.map((data) => {
+        const existingDataIdx = uniqueDatas.findIndex((d) => d.id === data.id);
+
+        if (existingDataIdx == -1) {
+          uniqueDatas.push(data);
+        } else {
+          const existingData = uniqueDatas[existingDataIdx];
+          const description =
+            existingData.description.length > data.description.length
+              ? existingData.description
+              : data.description;
+          const koreanDescription =
+            existingData.koreanDescription.length >
+            data.koreanDescription.length
+              ? existingData.koreanDescription
+              : data.koreanDescription;
+          const verses = !!existingData.verses
+            ? existingData.verses
+            : data.verses || [];
+
+          const imageTitle = existingData.imageTitle
+            ? existingData.imageTitle
+            : data.imageTitle;
+
+          uniqueDatas.splice(existingDataIdx, 1, {
+            ...existingData,
+            description,
+            koreanDescription,
+            verses,
+            imageTitle,
+          });
+        }
+      });
 
       parsedUniquePlaces = uniqueDatas.map((data) => {
         const { latitude, longitude } = this.getRepresentativePoint(
@@ -862,6 +1027,7 @@ export class PlaceService {
         return {
           id: data.id,
           name: data.name,
+          koreanName: data.koreanName,
           isModern: data.isModern,
           description: data.description,
           koreanDescription: data.koreanDescription,
@@ -889,16 +1055,27 @@ export class PlaceService {
         parsedPlacePlaceTypes.push(...placePlaceTypes);
       });
 
-      parsedRelations = parsedFiles.flatMap((parse) =>
-        parse.relations.map((relation) => {
+      const allRelations = parsedFiles.flatMap((parse) => parse.relations);
+      const uniqueRelationsMap = new Map<string, any>();
+
+      allRelations.forEach((relation) => {
+        const key = `${relation.parentId}-${relation.childId}`;
+        if (!uniqueRelationsMap.has(key)) {
+          uniqueRelationsMap.set(key, relation);
+        }
+      });
+
+      parsedRelations = Array.from(uniqueRelationsMap.values()).map(
+        (relation) => {
           const placeRelation = new PlaceRelation();
           placeRelation.parent = { id: relation.parentId } as Place;
           placeRelation.child = { id: relation.childId } as Place;
           placeRelation.possibility = relation.possibility;
           return placeRelation;
-        }),
+        },
       );
     } catch (e) {
+      console.log(e);
       throw new InternalServerErrorException('📂 파일 읽기 또는 파싱 실패', {
         cause: e,
       });
@@ -915,7 +1092,7 @@ export class PlaceService {
         ]);
 
         await manager.save(Place, parsedUniquePlaces);
-
+        console.log('place저장!');
         await manager.save(PlaceRelation, parsedRelations);
 
         const uniquePlaceTypes = Array.from(new Set(parsedPlaceTypes)).map(
@@ -990,7 +1167,7 @@ export class PlaceService {
         LOWER(LEFT(name, 1)) AS prefix,
         COUNT(*) AS "placeCount"
       FROM place
-      WHERE stereo = 'parent'
+      WHERE "isModern" = false
       GROUP BY prefix
       ORDER BY prefix ASC
     `,
@@ -1001,7 +1178,7 @@ export class PlaceService {
       SELECT COUNT(*) FROM (
         SELECT LOWER(LEFT(name, 1)) AS prefix
         FROM place
-        WHERE stereo = 'parent'
+        WHERE "isModern" = false
         GROUP BY prefix
       ) AS sub
     `);
@@ -1012,15 +1189,47 @@ export class PlaceService {
     };
   }
 
+  async getPlaceBibleBookCounts() {
+    const bibleBookKeys = Object.keys(BibleBook) as (keyof typeof BibleBook)[];
+
+    const caseStatements = bibleBookKeys
+      .map(
+        (key) =>
+          `SUM(CASE WHEN verse LIKE '%${key}%' THEN 1 ELSE 0 END) AS "${BibleBook[key]}"`,
+      )
+      .join(', ');
+
+    const rawResult = await this.placeRepository.query(
+      `SELECT ${caseStatements} FROM place WHERE "isModern" = false`,
+    );
+
+    const results: { bible: string; placeCount: number }[] = [];
+    const row = rawResult[0];
+
+    for (const bookKey of bibleBookKeys) {
+      const count = Number(row[BibleBook[bookKey]]);
+      if (count > 0) {
+        results.push({
+          bible: bookKey,
+          placeCount: count,
+        });
+      }
+    }
+
+    return {
+      total: results.length,
+      data: results,
+    };
+  }
+
   async getBibleVerse(getVerseDto: GetVerseDto) {
     const { verse, book, chapter, version } = getVerseDto;
 
-    const verseBook = BibleBook[book]; // 'jude'
     // const agent = new https.Agent({ rejectUnauthorized: false });
 
     try {
       const res = await axios.get(
-        `${this.bibleURL}?${version}-${verseBook}/${chapter}:${verse}`,
+        `${this.bibleURL}?${version}-${book}/${chapter}:${verse}`,
       );
 
       const $ = cheerio.load(res.data);
@@ -1040,21 +1249,47 @@ export class PlaceService {
 
   getRepresentativePoint(geoJsonText: string) {
     const geoJson: FeatureCollection = JSON.parse(geoJsonText);
+    const allCoordinates: [number, number][] = [];
 
-    const representativePointFeature = geoJson.features.find(
-      (feature) => feature.properties?.role === 'representative_point',
-    );
+    geoJson.features.forEach((feature) => {
+      if (!feature.geometry?.['coordinates']) return;
 
-    if (!representativePointFeature) {
+      const coords = feature.geometry?.['coordinates'];
+
+      if (feature.geometry.type === 'Point') {
+        allCoordinates.push(coords as [number, number]);
+      } else {
+        const flatCoords = (coords as number[][][]).flat(3);
+        const featureCoords: [number, number][] = [];
+        for (let i = 0; i < flatCoords.length; i += 2) {
+          featureCoords.push([flatCoords[i], flatCoords[i + 1]]);
+        }
+        if (featureCoords.length > 0) {
+          const avgLng =
+            featureCoords.reduce((sum, coord) => sum + coord[0], 0) /
+            featureCoords.length;
+          const avgLat =
+            featureCoords.reduce((sum, coord) => sum + coord[1], 0) /
+            featureCoords.length;
+          allCoordinates.push([avgLng, avgLat]);
+        }
+      }
+    });
+
+    if (allCoordinates.length === 0) {
       return { longitude: null, latitude: null };
     }
 
-    const [longitude, latitude] =
-      representativePointFeature.geometry?.['coordinates'];
+    const avgLongitude =
+      allCoordinates.reduce((sum, coord) => sum + coord[0], 0) /
+      allCoordinates.length;
+    const avgLatitude =
+      allCoordinates.reduce((sum, coord) => sum + coord[1], 0) /
+      allCoordinates.length;
 
     return {
-      longitude,
-      latitude,
+      longitude: avgLongitude,
+      latitude: avgLatitude,
     };
   }
 }
