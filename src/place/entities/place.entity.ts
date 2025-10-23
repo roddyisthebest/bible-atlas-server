@@ -13,8 +13,8 @@ import { PlacePlaceType } from './place-place-type.entity';
 import { PlaceType } from 'src/place-type/entities/place-type.entity';
 import { UserPlaceLike } from 'src/user/entities/user-place-like.entity';
 import { UserPlaceSave } from 'src/user/entities/user-place-save.entity';
+import { UserPlaceMemo } from 'src/user/entities/user-place-memo.entity';
 
-@Unique(['name', 'isModern'])
 @Entity()
 export class Place {
   @PrimaryColumn()
@@ -22,6 +22,9 @@ export class Place {
 
   @Column({ nullable: false })
   name: string;
+
+  @Column({ nullable: true })
+  koreanName: string;
 
   @Column({ default: false })
   isModern: boolean;
@@ -31,6 +34,9 @@ export class Place {
 
   @Column({ nullable: true })
   koreanDescription: string;
+
+  @Column({ nullable: true })
+  imageTitle: string;
 
   @Column({ default: PlaceStereo.parent })
   stereo: PlaceStereo;
@@ -43,6 +49,12 @@ export class Place {
 
   @Column({ nullable: true })
   unknownPlacePossibility: number;
+
+  @Column({ type: 'double precision', nullable: true })
+  latitude: number;
+
+  @Column({ type: 'double precision', nullable: true })
+  longitude: number;
 
   @OneToMany(() => Proposal, (proposal) => proposal.place)
   proposals: Proposal[];
@@ -61,4 +73,7 @@ export class Place {
 
   @OneToMany(() => UserPlaceSave, (ups) => ups.user)
   savedUsers: UserPlaceLike[];
+
+  @OneToMany(() => UserPlaceMemo, (ups) => ups.user)
+  memoedUsers: UserPlaceMemo[];
 }

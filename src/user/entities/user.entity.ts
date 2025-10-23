@@ -4,6 +4,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   BeforeInsert,
+  Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Proposal } from 'src/proposal/entities/proposal.entity';
@@ -12,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BaseTableEntity } from 'src/common/entity/base-table.entity';
 import { UserPlaceLike } from './user-place-like.entity';
 import { UserPlaceSave } from './user-place-save.entity';
+import { UserPlaceMemo } from './user-place-memo.entity';
 
 export enum Role {
   SUPER,
@@ -20,14 +22,30 @@ export enum Role {
   USER,
 }
 
+export enum Provider {
+  APPLE = 'apple',
+  GOOGLE = 'google',
+}
+
+@Index(['provider', 'providerId'], { unique: true })
 @Entity()
 export class User extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ nullable: true })
+  provider: Provider;
+
+  @Column({ nullable: true })
+  providerId: string;
+
   @Column({
-    unique: true,
+    unique: false,
+    nullable: true,
   })
+  name: string;
+
+  @Column({ unique: true, nullable: true })
   email: string;
 
   @Column({ nullable: true })
@@ -61,4 +79,7 @@ export class User extends BaseTableEntity {
 
   @OneToMany(() => UserPlaceSave, (ups) => ups.place)
   savedPlaces: UserPlaceLike[];
+
+  @OneToMany(() => UserPlaceMemo, (ups) => ups.place)
+  memoedPlaces: UserPlaceMemo[];
 }

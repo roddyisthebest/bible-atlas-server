@@ -35,11 +35,29 @@ export class PlaceTypeService {
   async findAll(dto: PagePaginationDto) {
     const { limit, page } = dto;
 
-    const qb = this.placeTypeRepository.createQueryBuilder();
-
+    const qb = this.placeTypeRepository.createQueryBuilder('placeType');
     this.commonService.applyPagePaginationParamsToQb(qb, { limit, page });
 
-    let [data, total] = await qb.getManyAndCount();
+    const [placeTypes, total] = await qb.getManyAndCount();
+
+    const data = await Promise.all(
+      placeTypes.map(async (placeType) => {
+        const placeCount = await this.placeTypeRepository.query(
+          `
+          SELECT COUNT(*) as count
+          FROM place_place_type ppt
+          INNER JOIN place p ON p.id = ppt."placeId"
+          WHERE ppt."placeTypeId" = $1 AND p."isModern" = false
+          `,
+          [placeType.id]
+        );
+        
+        return {
+          ...placeType,
+          placeCount: parseInt(placeCount[0].count) || 0,
+        };
+      })
+    );
 
     return {
       total,
@@ -47,6 +65,10 @@ export class PlaceTypeService {
       limit,
       data: instanceToPlain(data),
     };
+  }
+
+  delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async findOne(id: number) {

@@ -16,7 +16,7 @@ export class BaseTableEntity {
 
   @DeleteDateColumn()
   @Exclude()
-  deletedAt: Date;
+  deletedAt: Date | null;
 
   @VersionColumn()
   @Exclude()

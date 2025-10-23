@@ -19,6 +19,8 @@ import { Public } from 'src/auth/decorator/public.decorator';
 import { GetPlacesDto } from './dto/get-places.dto';
 import { MinimumRole } from 'src/auth/decorator/minimun-role.decorator';
 import { Role } from 'src/user/entities/user.entity';
+import { CreateOrUpdatePlaceMemoDto } from './dto/create-or-update-place-memo.dto';
+import { GetVerseDto } from './dto/get-verse.dto';
 
 @Controller('place')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -37,9 +39,44 @@ export class PlaceController {
   }
 
   @Public()
+  @Get('with-representative-point')
+  findAllPlacesWithRepPoint() {
+    return this.placeService.findAllPlacesWithRepPoint();
+  }
+
+  @Public()
+  @Get('prefix-count')
+  getPlacePrefixCounts() {
+    return this.placeService.getPlacePrefixCounts();
+  }
+
+  @Public()
+  @Get('bible-book-count')
+  getPlaceBibleBookCounts() {
+    return this.placeService.getPlaceBibleBookCounts();
+  }
+
+  @Public()
+  @Get('bible-verse')
+  getBibleVerse(@Query() getVerseDto: GetVerseDto) {
+    return this.placeService.getBibleVerse(getVerseDto);
+  }
+
+  @Public()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.placeService.findOne(id);
+  findOne(@Param('id') id: string, @UserId({ isPublic: true }) userId: number) {
+    return this.placeService.findOne(id, userId);
+  }
+
+  @Public()
+  @Get(':id/geojson')
+  findGeoJSON(@Param('id') id: string) {
+    return this.placeService.findGeoJSON(id);
+  }
+
+  @Get(':id/user')
+  findRelatedUserInfo(@Param('id') id: string, @UserId() userId: number) {
+    return this.placeService.findRelatedUserInfo(id, userId);
   }
 
   @Patch(':id')
@@ -50,6 +87,34 @@ export class PlaceController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.placeService.remove(id);
+  }
+
+  @Post(':id/like')
+  toggleLike(@Param('id') id: string, @UserId() userId: number) {
+    return this.placeService.toggleLike(userId, id);
+  }
+
+  @Post(':id/save')
+  toggleSave(@Param('id') id: string, @UserId() userId: number) {
+    return this.placeService.toggleSave(userId, id);
+  }
+
+  @Post(':id/memo')
+  createOrUpdateMemo(
+    @Param('id') id: string,
+    @UserId() userId: number,
+    @Body() createOrUpdatePlaceMemoDto: CreateOrUpdatePlaceMemoDto,
+  ) {
+    return this.placeService.createOrUpdateMemo(
+      userId,
+      id,
+      createOrUpdatePlaceMemoDto,
+    );
+  }
+
+  @Delete(':id/memo')
+  deleteMemo(@Param('id') id: string, @UserId() userId: number) {
+    return this.placeService.deleteMemo(userId, id);
   }
 
   @MinimumRole(Role.SUPER)
