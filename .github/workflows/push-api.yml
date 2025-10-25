@@ -28,7 +28,8 @@ jobs:
       - name: Build & Push for linux/amd64
         uses: docker/build-push-action@v6
         with:
-          context: ./api
+          context: . # ✅ 루트에 package.json
+          # file: ./Dockerfile       # 루트면 생략 가능
           platforms: linux/amd64
           push: true
           tags: |
