@@ -86,6 +86,10 @@ jobs:
             docker compose up -d caddy
             docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
 
+            echo "::notice ::deploy script finished OK"
+            exit 0
+            SH
+
       - name: HTTPS health check
         uses: appleboy/ssh-action@v1.0.3
         with:
