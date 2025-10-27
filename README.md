@@ -1,98 +1,243 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+<div align="center">
+  <h1>📍 Bible Atlas Server</h1>
+  <p><strong>A comprehensive API for biblical places and geographical data</strong></p>
+  
+  <p>
+    <a href="https://bible-atlas-server.xyz" target="_blank">
+      <img src="https://img.shields.io/badge/🌐_Live_API-bible--atlas--server.xyz-blue?style=for-the-badge" alt="Live API" />
+    </a>
+  </p>
+  
+  <p>
+    <img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS" />
+    <img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+    <img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker" />
+  </p>
+</div>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 🌟 Overview
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Bible Atlas Server is a robust REST API that provides comprehensive data about biblical places, their geographical locations, historical context, and relationships. Built with NestJS and TypeScript, it serves as the backend for biblical geography applications and research tools.
 
-## Description
+### ✨ Key Features
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- 🗺️ **Comprehensive Place Database** - Thousands of biblical locations with detailed information
+- 🔍 **Advanced Search** - Search by name (English/Korean), biblical references, place types
+- 📍 **Geospatial Data** - Precise coordinates and GeoJSON support for mapping
+- 🔗 **Place Relationships** - Parent-child relationships between ancient and modern locations
+- 📖 **Biblical References** - Verse citations and contextual information
+- 👤 **User Features** - Bookmarks, likes, notes, and personal collections
+- 🏷️ **Categorization** - Places organized by types (settlement, mountain, river, etc.)
+- 🌐 **Multilingual** - Support for English and Korean descriptions
 
-## Project setup
+## 🚀 Live API
 
-```bash
-$ yarn install
-```
+**Base URL:** `https://bible-atlas-server.xyz`
 
-## Compile and run the project
-
-```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
-```
-
-## Run tests
+### 📋 Key Endpoints
 
 ```bash
-# unit tests
-$ yarn run test
+# Get all places with search and filtering
+GET /place?name=jerusalem&isModern=false&limit=10
 
-# e2e tests
-$ yarn run test:e2e
+# Get place details with relationships
+GET /place/{id}
 
-# test coverage
-$ yarn run test:cov
+# Get places with coordinates for mapping
+GET /place/with-representative-point
+
+# Get place types and categories
+GET /place-type
+
+# Get biblical book statistics
+GET /place/bible-book-count
+
+# Get places by alphabet prefix
+GET /place/prefix-count
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 🔍 Search Examples
 
 ```bash
-$ yarn install -g mau
-$ mau deploy
+# Search by name (supports both English and Korean)
+curl "https://bible-atlas-server.xyz/place?name=jerusalem"
+
+# Filter by place type
+curl "https://bible-atlas-server.xyz/place?placeTypes=settlement,mountain"
+
+# Get places by biblical book
+curl "https://bible-atlas-server.xyz/place?bibleBook=Gen"
+
+# Get ancient places only
+curl "https://bible-atlas-server.xyz/place?isModern=false"
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 🛠️ Tech Stack
 
-## Resources
+- **Framework:** NestJS with TypeScript
+- **Database:** PostgreSQL with TypeORM
+- **Authentication:** JWT with role-based access
+- **Deployment:** Docker + GitHub Actions
+- **Reverse Proxy:** Caddy with automatic HTTPS
+- **Data Processing:** Cheerio for web scraping, Axios for HTTP requests
 
-Check out a few resources that may come in handy when working with NestJS:
+## 🏗️ Architecture
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```
+📦 bible-atlas-server/
+├── 🔐 src/auth/          # Authentication & authorization
+├── 📍 src/place/         # Place entities & business logic
+├── 🏷️ src/place-type/    # Place categorization
+├── 👤 src/user/          # User management
+├── 📝 src/place-report/  # User-generated reports
+├── 💡 src/proposal/      # Place suggestions
+└── 🔧 src/common/        # Shared utilities
+```
 
-## Support
+## 🚀 Quick Start
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Prerequisites
+- Node.js 20+
+- PostgreSQL 14+
+- Docker (optional)
 
-## Stay in touch
+### Installation
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+# Clone the repository
+git clone https://github.com/roddyisthebest/bible-atlas-server.git
+cd bible-atlas-server
 
-## License
+# Install dependencies
+npm install
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your database credentials
+
+# Run database migrations
+npm run typeorm:migration:run
+
+# Start development server
+npm run start:dev
+```
+
+### 🐳 Docker Setup
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# The API will be available at http://localhost:3000
+```
+
+## 📊 Data Sources
+
+The Bible Atlas Server aggregates data from multiple scholarly sources:
+
+- **OpenBible.info** - Primary source for place identifications and relationships
+- **Archaeological Surveys** - Modern archaeological site data
+- **Biblical Texts** - Verse references and contextual information
+- **Geographical Databases** - Coordinate data and GeoJSON geometries
+
+## 🔄 Data Processing Pipeline
+
+1. **Web Scraping** - Automated data collection from biblical geography sources
+2. **Data Cleaning** - Deduplication and normalization
+3. **Relationship Mapping** - Connecting ancient places with modern locations
+4. **Geocoding** - Converting place names to precise coordinates
+5. **Database Import** - Structured storage with full-text search capabilities
+
+## 🌍 API Features
+
+### Place Management
+- ✅ CRUD operations for biblical places
+- ✅ Advanced search with multiple filters
+- ✅ Geospatial queries and mapping support
+- ✅ Place relationships and hierarchies
+
+### User Features
+- ✅ User authentication and profiles
+- ✅ Bookmarking and favorites
+- ✅ Personal notes and annotations
+- ✅ Place reporting and corrections
+
+### Data Analytics
+- ✅ Biblical book statistics
+- ✅ Place type distributions
+- ✅ Alphabetical indexing
+- ✅ Usage analytics and metrics
+
+## 🔧 Development
+
+### Available Scripts
+
+```bash
+# Development
+npm run start:dev      # Start with hot reload
+npm run start:debug    # Start with debugging
+
+# Production
+npm run build          # Build for production
+npm run start:prod     # Start production server
+
+# Database
+npm run typeorm:migration:generate  # Generate migrations
+npm run typeorm:migration:run       # Run migrations
+
+# Testing
+npm run test           # Unit tests
+npm run test:e2e       # End-to-end tests
+npm run test:cov       # Test coverage
+```
+
+### 🔐 Environment Variables
+
+```bash
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=password
+DB_DATABASE=bible_atlas
+
+# JWT
+JWT_SECRET=your-secret-key
+JWT_EXPIRES_IN=7d
+
+# Server
+PORT=4343
+NODE_ENV=development
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feat/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feat/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [OpenBible.info](https://www.openbible.info) for geographical data
+- [NestJS](https://nestjs.com) for the amazing framework
+- All contributors and supporters of this project
+
+---
+
+<div align="center">
+  <p>Made with ❤️ for biblical geography research</p>
+  <p>
+    <a href="https://bible-atlas-server.xyz">🌐 Live API</a> |
+    <a href="https://github.com/roddyisthebest/bible-atlas-server/issues">🐛 Report Bug</a> |
+    <a href="https://github.com/roddyisthebest/bible-atlas-server/issues">💡 Request Feature</a>
+  </p>
+</div>
