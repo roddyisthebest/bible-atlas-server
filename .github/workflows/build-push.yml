@@ -91,6 +91,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }} # ← 추가
           port: ${{ secrets.SSH_PORT }}
           script_stop: true
           script: |
