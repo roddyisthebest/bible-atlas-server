@@ -637,8 +637,6 @@ export class PlaceService {
       ],
     });
 
-    console.log(place);
-
     if (!place) {
       throw new NotFoundException('존재하지 않는 장소입니다.');
     }
@@ -960,21 +958,44 @@ export class PlaceService {
 
   @MinimumRole(Role.SUPER)
   async pushToDB() {
-    const dir = join(process.cwd(), 'ai-places-data');
-    const fileNames = await readdir(dir);
+    const zipUrl =
+      'https://raw.githubusercontent.com/roddyisthebest/bible-atlas-server/main/ai-places-data.zip';
+    const tempDir = join(process.cwd(), 'temp-ai-data');
+    const zipPath = join(tempDir, 'ai-place-data.zip');
 
-    const paths = fileNames
-      .filter((file) => file.endsWith('.json')) // 확장자만 체크
-      .map((file) => join(dir, file));
-
-    let parsedUniquePlaces: Place[] = [];
-    let parsedRelations: PlaceRelation[] = [];
-    let parsedPlacePlaceTypes: PlacePlaceType[] = [];
-    let parsedPlaceTypes: string[] = [];
-
-    // 1. 파일 읽기 및 파싱 단계
     try {
-      const files = await Promise.all(paths.map((path) => readFile(path)));
+      // 임시 디렉토리 생성
+      await this.dataSource.query('SELECT 1'); // mkdir 대신 fs 모듈 사용
+      const fs = await import('fs/promises');
+      await fs.mkdir(tempDir, { recursive: true });
+
+      // ZIP 파일 다운로드
+      const response = await axios.get(zipUrl, { responseType: 'arraybuffer' });
+      await fs.writeFile(zipPath, response.data);
+
+      // ZIP 파일 압축 해제
+      const AdmZip = require('adm-zip');
+      const zip = new AdmZip(zipPath);
+      zip.extractAllTo(tempDir, true);
+
+      // JSON 파일들 찾기
+      const extractedDir = join(tempDir, 'ai-places-data');
+      const fileNames = await fs.readdir(extractedDir);
+      const paths = fileNames
+        .filter((file) => file.endsWith('.json'))
+        .map((file) => join(extractedDir, file));
+
+      if (paths.length === 0) {
+        throw new Error('No JSON files found in extracted data');
+      }
+
+      let parsedUniquePlaces: Place[] = [];
+      let parsedRelations: PlaceRelation[] = [];
+      let parsedPlacePlaceTypes: PlacePlaceType[] = [];
+      let parsedPlaceTypes: string[] = [];
+
+      // 1. 파일 읽기 및 파싱 단계
+      const files = await Promise.all(paths.map((path) => fs.readFile(path)));
       const parsedFiles: AiPlaceFile[] = files.map((buf) =>
         JSON.parse(buf.toString()),
       );
@@ -1074,15 +1095,7 @@ export class PlaceService {
           return placeRelation;
         },
       );
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('📂 파일 읽기 또는 파싱 실패', {
-        cause: e,
-      });
-    }
-
-    // 2. DB 저장 단계
-    try {
+      // 2. DB 저장 단계
       return await this.dataSource.transaction(async (manager) => {
         await Promise.all([
           manager.delete(PlaceRelation, {}),
@@ -1128,9 +1141,17 @@ export class PlaceService {
       });
     } catch (e) {
       console.log(e);
-      throw new InternalServerErrorException('💾 DB 저장 중 오류 발생', {
+      throw new InternalServerErrorException('처리 중 오류 발생', {
         cause: e,
       });
+    } finally {
+      // 임시 파일 정리
+      try {
+        const fs = await import('fs/promises');
+        await fs.rm(tempDir, { recursive: true, force: true });
+      } catch (cleanupError) {
+        console.warn('임시 파일 정리 실패:', cleanupError);
+      }
     }
   }
 
