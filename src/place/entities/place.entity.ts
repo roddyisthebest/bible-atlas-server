@@ -24,6 +24,12 @@ export class Place {
   name: string;
 
   @Column({ nullable: true })
+  anotherNames: string;
+
+  @Column({ nullable: true })
+  anotherKoreanNames: string;
+
+  @Column({ nullable: true })
   koreanName: string;
 
   @Column({ default: false })

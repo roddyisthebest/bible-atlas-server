@@ -653,6 +653,10 @@ export class PlaceService {
           (rel) => rel.parent.id === placeId,
         );
 
+        const childRelation = place.childRelations.find(
+          (rel) => rel.child.id === placeId,
+        );
+
         if (parentRelation) {
           return {
             ...feature,
@@ -663,10 +667,6 @@ export class PlaceService {
             },
           };
         }
-
-        const childRelation = place.childRelations.find(
-          (rel) => rel.child.id === placeId,
-        );
 
         if (childRelation) {
           return {
@@ -708,12 +708,6 @@ export class PlaceService {
         const placeUrl = placeLinkTag.attr('href');
         const isModern = placeUrl?.includes('modern');
 
-        const rawHtml = p.html() || '';
-        const descMatch = rawHtml.match(
-          /Possible identifications\)<\/a>:\s*([^<]+)/,
-        );
-        const description = descMatch ? descMatch[1].trim() : '';
-
         const verses: string[] = [];
         p.find('a[href*="biblegateway"]').each((_, a) => {
           const href = $(a).attr('href');
@@ -741,7 +735,7 @@ export class PlaceService {
 
       const batchParentSize = 5;
       let doneParentCount = 0;
-      const limit = 20;
+      const limit = 10;
 
       const start = page * limit;
       const end = (page + 1) * limit;
@@ -755,6 +749,7 @@ export class PlaceService {
         childId: string | undefined;
         possibility: number | null;
       }[] = [];
+      const relationKeys = new Set<string>();
 
       for (let i = 0; i < parentTotal; i += batchParentSize) {
         const batch = slicedResult.slice(i, i + batchParentSize);
@@ -784,6 +779,12 @@ export class PlaceService {
             .map((s) => s.trim())
             .filter(Boolean);
 
+          const anotherNames = $('tr')
+            .filter((_, el) => $(el).find('th').text().trim() === 'Also Called')
+            .find('td')
+            .text()
+            .trim();
+
           const response = await axios.get(
             `${this.geoJsonBaseURL}/${place.id}.geojson`,
           );
@@ -794,10 +795,6 @@ export class PlaceService {
           $('ol')
             .first()
             .children('li')
-            .filter((_, el) => {
-              const liText = $(el).text().toLowerCase(); // 소문자 비교를 위해
-              return !liText.includes('another name');
-            })
             .each((_, el) => {
               const liText = $(el).text().toLowerCase();
 
@@ -810,25 +807,52 @@ export class PlaceService {
                 return;
               }
 
-              const path = $(el).find('a').attr('href');
-
-              if (!path) {
-                return;
-              }
-
               const isPerfect = liText.includes('very high confidence');
-
               const match = liText.match(/(\d+)%/);
               const possibility = match ? Number(match[1]) : null;
 
-              const childId = path.split('/')?.at(-2);
+              // a.img 태그들에서 featureClick 추출
+              const imgLinks = $(el).find('a.img');
+              const paths: string[] = [];
 
-              relations.push({
-                parentId: place.id,
-                childId,
-                possibility: isPerfect ? 100 : possibility,
+              if (imgLinks.length > 0) {
+                imgLinks.each((_, imgLink) => {
+                  const onclick = $(imgLink).attr('onclick');
+                  const featureClickMatch = onclick?.match(
+                    /featureClick\('([^']+)'\)/,
+                  );
+                  if (featureClickMatch) {
+                    const featureId = featureClickMatch[1];
+                    const childId = featureId.split('.')[0];
+                    const period = childId.startsWith('m')
+                      ? 'modern'
+                      : 'ancient';
+                    const path = `/geo/${period}/${childId}`;
+
+                    // paths도 겹친게 있으면 추가 안하기
+                    if (!paths.includes(path)) {
+                      paths.push(path);
+                    }
+
+                    // relations 겹친게 있으면 (parentId, childId) 조합으로 그럼 추가 안하기
+                    const relationKey = `${place.id}-${childId}`;
+                    if (!relationKeys.has(relationKey)) {
+                      relationKeys.add(relationKey);
+                      relations.push({
+                        parentId: place.id,
+                        childId,
+                        possibility: isPerfect ? 100 : possibility,
+                      });
+                    }
+                  }
+                });
+              }
+
+              paths.forEach((path) => {
+                if (!identificationPaths.includes(path)) {
+                  identificationPaths.push(path);
+                }
               });
-              identificationPaths.push(path);
             });
 
           return {
@@ -838,6 +862,7 @@ export class PlaceService {
             types,
             unknownPlacePossibility,
             geojsonText,
+            anotherNames: anotherNames || null,
           };
         });
 
@@ -867,7 +892,7 @@ export class PlaceService {
       for (let i = 0; i < childTotal; i += batchChildSize) {
         const batch = pureIdentificationPaths.slice(i, i + batchChildSize);
         const promises = batch.map(async (placeUrl) => {
-          const [, , period, placeId, name] = placeUrl.split('/');
+          const [, , , placeId] = placeUrl.split('/');
 
           const fullUrl = `${this.baseURL}${placeUrl}`;
           const res = await axios.get(fullUrl);
@@ -875,6 +900,8 @@ export class PlaceService {
           const hasAbout = $('h2')
             .toArray()
             .some((el) => $(el).text().includes('About'));
+
+          const name = $('h1').text();
 
           const types = $('tr')
             .filter(
@@ -885,7 +912,21 @@ export class PlaceService {
             .find('td')
             .text()
             .trim()
-            .split(/\s*or\s*/);
+            .replace(/\s+or\s+/g, ',')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+          const anotherNames = $('tr')
+            .filter((_, el) => $(el).find('th').text().trim() === 'Also Called')
+            .find('td')
+            .text()
+            .trim();
+
+          const imageTitle = $('img.thumbnail-0')
+            .attr('src')
+            ?.split('/')
+            ?.at(-1);
 
           if (!hasAbout) {
             return null;
@@ -902,12 +943,14 @@ export class PlaceService {
           return {
             id: placeId,
             name,
-            isModern: period === 'modern',
+            isModern: true,
             stereo: 'child',
             description: '',
             koreanDescription: '',
+            imageTitle,
             types,
             geojsonText,
+            anotherNames: anotherNames || null,
           };
         });
 
@@ -925,7 +968,7 @@ export class PlaceService {
 
       const date = new Date().valueOf();
 
-      const dir = join(process.cwd(), 'places-data');
+      const dir = join(process.cwd(), 'new-places-data');
       const path = join(dir, `${date}&page=${page}&limit=${limit}.json`);
 
       try {
@@ -965,7 +1008,6 @@ export class PlaceService {
 
     try {
       // 임시 디렉토리 생성
-      await this.dataSource.query('SELECT 1'); // mkdir 대신 fs 모듈 사용
       const fs = await import('fs/promises');
       await fs.mkdir(tempDir, { recursive: true });
 
@@ -1049,6 +1091,8 @@ export class PlaceService {
           id: data.id,
           name: data.name,
           koreanName: data.koreanName,
+          anotherNames: data.anotherNames,
+          anotherKoreanNames: data.anotherKoreanNames,
           isModern: data.isModern,
           description: data.description,
           koreanDescription: data.koreanDescription,
@@ -1063,9 +1107,9 @@ export class PlaceService {
       });
 
       parsedPlaceTypes = uniqueDatas.flatMap((data) => data.types);
+
       uniqueDatas.forEach((data) => {
         const types = data.types;
-
         const placePlaceTypes = types.map((type) => {
           const placePlaceType = new PlacePlaceType();
           placePlaceType.place = { id: data.id } as Place;
@@ -1144,14 +1188,102 @@ export class PlaceService {
       throw new InternalServerErrorException('처리 중 오류 발생', {
         cause: e,
       });
-    } finally {
-      // 임시 파일 정리
-      try {
-        const fs = await import('fs/promises');
-        await fs.rm(tempDir, { recursive: true, force: true });
-      } catch (cleanupError) {
-        console.warn('임시 파일 정리 실패:', cleanupError);
+    }
+  }
+
+  @MinimumRole(Role.SUPER)
+  async buildEntireData() {
+    try {
+      const fs = await import('fs/promises');
+
+      const newPlacesDir = join(process.cwd(), 'new-places-data');
+      const lightNewPlacesDir = join(process.cwd(), 'light-new-places-data');
+      const aiPlacesDir = join(process.cwd(), 'ai-places-data');
+
+      await fs.mkdir(aiPlacesDir, { recursive: true });
+
+      const newPlacesFiles = await fs.readdir(newPlacesDir);
+      const lightNewPlacesFiles = await fs.readdir(lightNewPlacesDir);
+
+      console.log('new-places-data 파일들:', newPlacesFiles);
+      console.log('light-new-places-data 파일들:', lightNewPlacesFiles);
+
+      const pageGroups = new Map<
+        string,
+        { newFile?: string; lightFile?: string }
+      >();
+
+      newPlacesFiles.forEach((file) => {
+        const pageMatch = file.match(/page[=\-_](\d+)/) || file.match(/(\d+)/);
+        if (pageMatch) {
+          const page = pageMatch[1];
+          console.log(`new-places-data 파일 ${file} -> 페이지 ${page}`);
+          if (!pageGroups.has(page)) pageGroups.set(page, {});
+          pageGroups.get(page)!.newFile = file;
+        }
+      });
+
+      lightNewPlacesFiles.forEach((file) => {
+        const pageMatch = file.match(/page[=\-_](\d+)/) || file.match(/(\d+)/);
+        if (pageMatch) {
+          const page = pageMatch[1];
+          console.log(`light-new-places-data 파일 ${file} -> 페이지 ${page}`);
+          if (!pageGroups.has(page)) pageGroups.set(page, {});
+          pageGroups.get(page)!.lightFile = file;
+        }
+      });
+
+      console.log('페이지 그룹:', Array.from(pageGroups.entries()));
+
+      for (const [page, files] of pageGroups) {
+        console.log(`페이지 ${page} 처리 중:`, files);
+        if (!files.newFile || !files.lightFile) {
+          console.log(
+            `페이지 ${page} 스킵: newFile=${files.newFile}, lightFile=${files.lightFile}`,
+          );
+          continue;
+        }
+
+        const newData = JSON.parse(
+          await fs.readFile(join(newPlacesDir, files.newFile), 'utf-8'),
+        );
+        const lightData = JSON.parse(
+          await fs.readFile(join(lightNewPlacesDir, files.lightFile), 'utf-8'),
+        );
+
+        const mergedData = lightData.data.map((lightPlace: any) => {
+          const newPlace = newData.data.find(
+            (np: any) => np.id === lightPlace.id,
+          );
+          return {
+            ...newPlace,
+            ...lightPlace,
+            // geojsonText: newPlace?.geojsonText,
+          };
+        });
+
+        const result = {
+          data: mergedData,
+          relations: lightData.relations || newData.relations || [],
+          total: mergedData.length,
+        };
+
+        const outputFile = `merged-page-${page}.json`;
+        await fs.writeFile(
+          join(aiPlacesDir, outputFile),
+          JSON.stringify(result),
+          'utf-8',
+        );
+        console.log(`저장 완료: ${outputFile}`);
       }
+
+      return {
+        status: 200,
+        message: `📌 ${pageGroups.size}개 페이지 데이터 병합 완료`,
+      };
+    } catch (error) {
+      console.error('병합 오류:', error);
+      throw new ConflictException('데이터 병합 중 오류 발생', error);
     }
   }
 
