@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.0](https://github.com/roddyisthebest/bible-atlas-server/compare/v1.0.0...v1.1.0) (2025-11-04)
+
+
+### Features
+
+* add additional place types to enum ([9e8cb7f](https://github.com/roddyisthebest/bible-atlas-server/commit/9e8cb7f40ac8048775420eb8b88ee834e7e39698))
+* change place logic ([f5a96ef](https://github.com/roddyisthebest/bible-atlas-server/commit/f5a96ef9c84be5944fee86af0c1a407ef49b3586))
+* update ai-places-data with enhanced scraping and data merging ([a7aa20e](https://github.com/roddyisthebest/bible-atlas-server/commit/a7aa20e00639cc9cf654cb36775679c141cbe5a7))
+* update place entity and place type enum ([ab3a7f5](https://github.com/roddyisthebest/bible-atlas-server/commit/ab3a7f5201bbf2bf868e70dafd69e1ba9857d4de))
+
 ## 1.0.0 (2025-10-27)
 
 
