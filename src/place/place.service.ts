@@ -1003,32 +1003,28 @@ export class PlaceService {
   async pushToDB() {
     const zipUrl =
       'https://raw.githubusercontent.com/roddyisthebest/bible-atlas-server/main/ai-places-data.zip';
-    const tempDir = join(process.cwd(), 'temp-ai-data');
-    const zipPath = join(tempDir, 'ai-place-data.zip');
 
     try {
-      // 임시 디렉토리 생성
-      const fs = await import('fs/promises');
-      await fs.mkdir(tempDir, { recursive: true });
-
       // ZIP 파일 다운로드
       const response = await axios.get(zipUrl, { responseType: 'arraybuffer' });
-      await fs.writeFile(zipPath, response.data);
 
-      // ZIP 파일 압축 해제
+      // 메모리에서 바로 ZIP 파일 처리
       const AdmZip = require('adm-zip');
-      const zip = new AdmZip(zipPath);
-      zip.extractAllTo(tempDir, true);
+      const zip = new AdmZip(Buffer.from(response.data));
+      const zipEntries = zip.getEntries();
 
-      // JSON 파일들 찾기
-      const extractedDir = join(tempDir, 'ai-places-data');
-      const fileNames = await fs.readdir(extractedDir);
-      const paths = fileNames
-        .filter((file) => file.endsWith('.json'))
-        .map((file) => join(extractedDir, file));
+      // JSON 파일들만 필터링 (시스템 파일 제외)
+      const jsonEntries = zipEntries.filter(
+        (entry) =>
+          entry.entryName.endsWith('.json') &&
+          entry.entryName.includes('ai-places-data/') &&
+          !entry.entryName.includes('__MACOSX') &&
+          !entry.entryName.includes('.DS_Store') &&
+          !entry.entryName.startsWith('._'),
+      );
 
-      if (paths.length === 0) {
-        throw new Error('No JSON files found in extracted data');
+      if (jsonEntries.length === 0) {
+        throw new Error('No JSON files found in ZIP data');
       }
 
       let parsedUniquePlaces: Place[] = [];
@@ -1036,11 +1032,34 @@ export class PlaceService {
       let parsedPlacePlaceTypes: PlacePlaceType[] = [];
       let parsedPlaceTypes: string[] = [];
 
-      // 1. 파일 읽기 및 파싱 단계
-      const files = await Promise.all(paths.map((path) => fs.readFile(path)));
-      const parsedFiles: AiPlaceFile[] = files.map((buf) =>
-        JSON.parse(buf.toString()),
-      );
+      // HTML 엔티티 디코딩 함수
+      const decodeHtmlEntities = (text: string): string => {
+        return text
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>');
+      };
+
+      // 1. 메모리에서 바로 파일 읽기 및 파싱
+      const parsedFiles: AiPlaceFile[] = [];
+      
+      for (const entry of jsonEntries) {
+        try {
+          let content = entry.getData().toString('utf8');
+          console.log(`Processing file: ${entry.entryName}`);
+          
+          // HTML 엔티티 디코딩
+          content = decodeHtmlEntities(content);
+          
+          const parsed = JSON.parse(content);
+          parsedFiles.push(parsed);
+        } catch (parseError) {
+          console.error(`Failed to parse ${entry.entryName}:`, parseError);
+          throw new Error(`Invalid JSON in file ${entry.entryName}: ${parseError.message}`);
+        }
+      }
 
       const parsedDatas = parsedFiles.flatMap((parse) => parse.data);
 
@@ -1051,32 +1070,6 @@ export class PlaceService {
 
         if (existingDataIdx == -1) {
           uniqueDatas.push(data);
-        } else {
-          const existingData = uniqueDatas[existingDataIdx];
-          const description =
-            existingData.description.length > data.description.length
-              ? existingData.description
-              : data.description;
-          const koreanDescription =
-            existingData.koreanDescription.length >
-            data.koreanDescription.length
-              ? existingData.koreanDescription
-              : data.koreanDescription;
-          const verses = !!existingData.verses
-            ? existingData.verses
-            : data.verses || [];
-
-          const imageTitle = existingData.imageTitle
-            ? existingData.imageTitle
-            : data.imageTitle;
-
-          uniqueDatas.splice(existingDataIdx, 1, {
-            ...existingData,
-            description,
-            koreanDescription,
-            verses,
-            imageTitle,
-          });
         }
       });
 
@@ -1149,7 +1142,6 @@ export class PlaceService {
         ]);
 
         await manager.save(Place, parsedUniquePlaces);
-        console.log('place저장!');
         await manager.save(PlaceRelation, parsedRelations);
 
         const uniquePlaceTypes = Array.from(new Set(parsedPlaceTypes)).map(
