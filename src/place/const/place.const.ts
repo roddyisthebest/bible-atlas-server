@@ -118,7 +118,7 @@ export enum PlaceType {
   forest = 'forest',
   cave = 'cave',
   stoneHeap = 'stone heap',
-  harb = 'harb',
+  harbor = 'harbor',
   hall = 'hall',
   intersection = 'intersection',
   cliff = 'cliff',

@@ -29,7 +29,7 @@ export class Place {
   @Column({ nullable: true })
   anotherKoreanNames: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   koreanName: string;
 
   @Column({ default: false })
