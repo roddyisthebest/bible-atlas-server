@@ -2,6 +2,8 @@ export interface AiPlaceData {
   id: string;
   name: string;
   koreanName: string;
+  anotherNames: string;
+  anotherKoreanNames: string;
   imageTitle: string;
   isModern: boolean;
   stereo: 'parent' | 'child';

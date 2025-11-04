@@ -132,6 +132,12 @@ export class PlaceController {
     return this.placeService.pushToDB();
   }
 
+  @MinimumRole(Role.SUPER)
+  @Post('build-entire-data')
+  buildEntireData() {
+    return this.placeService.buildEntireData();
+  }
+
   @Public()
   @Sse('progress/:userId')
   sendProgress(@Param('userId') userId: number) {
