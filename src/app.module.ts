@@ -31,7 +31,7 @@ import { PlacePlaceType } from './place/entities/place-place-type.entity';
 import { PlaceType } from './place-type/entities/place-type.entity';
 import { UserPlaceLike } from './user/entities/user-place-like.entity';
 import { UserPlaceSave } from './user/entities/user-place-save.entity';
-
+import { Report } from './report/entities/report.entity';
 import { UserPlaceMemo } from './user/entities/user-place-memo.entity';
 import { AttatchUserWithNoErrorMiddleware } from './auth/middleware/attach-user-with-no-error.middleware';
 import { PlaceReportModule } from './place-report/place-report.module';
@@ -81,9 +81,9 @@ import { HealthController } from './health/health.controller';
           UserPlaceSave,
           UserPlaceMemo,
           PlaceReport,
+          Report,
         ],
-        synchronize:
-          configService.get<string>(envVariables.env) === 'dev' ? true : false,
+        synchronize: false,
       }),
       inject: [ConfigService],
     }),
