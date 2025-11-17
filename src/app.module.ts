@@ -83,8 +83,7 @@ import { HealthController } from './health/health.controller';
           PlaceReport,
           Report,
         ],
-        synchronize:
-          configService.get<string>(envVariables.env) === 'dev' ? true : false,
+        synchronize: false,
       }),
       inject: [ConfigService],
     }),
