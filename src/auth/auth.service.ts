@@ -43,13 +43,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new BadRequestException('잘못된 로그인 정보입니다.');
+      throw new BadRequestException('Invalid login credentials.');
     }
 
     const isPass = await bcrypt.compare(password, user.password);
 
     if (!isPass) {
-      throw new BadRequestException('잘못된 로그인 정보입니다.');
+      throw new BadRequestException('Invalid login credentials.');
     }
 
     return user;
@@ -58,20 +58,20 @@ export class AuthService {
   parseBasicToken(rawToken: string) {
     const basicSplit = rawToken.split(' ');
     if (basicSplit.length !== 2) {
-      throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+      throw new BadRequestException('Invalid token format!');
     }
 
     const [basic, token] = basicSplit;
 
     if (basic.toLocaleLowerCase() !== 'basic') {
-      throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+      throw new BadRequestException('Invalid token format!');
     }
 
     const decoded = Buffer.from(token, 'base64').toString('utf-8');
     const tokenSplit = decoded.split(':');
 
     if (tokenSplit.length !== 2) {
-      throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+      throw new BadRequestException('Invalid token format!');
     }
 
     const [email, password] = tokenSplit;
@@ -146,15 +146,15 @@ export class AuthService {
     } catch (e) {
       switch (e.name) {
         case 'TokenExpiredError':
-          throw new UnauthorizedException('리프레시 토큰이 만료되었습니다.');
+          throw new UnauthorizedException('Refresh token has expired.');
         case 'JsonWebTokenError':
-          throw new UnauthorizedException('토큰의 형식이 올바르지 않습니다.');
+          throw new UnauthorizedException('Invalid token format.');
         case 'NotBeforeError':
           throw new UnauthorizedException(
-            '토큰이 아직 활성화 되지 않았습니다.',
+            'Token is not yet active.',
           );
         default:
-          throw new UnauthorizedException('토큰을 확인할 수 없습니다.');
+          throw new UnauthorizedException('Unable to verify token.');
       }
     }
   }
@@ -172,7 +172,7 @@ export class AuthService {
       );
       return data;
     } catch {
-      throw new UnauthorizedException('카카오 토큰 인증에 실패했습니다.');
+      throw new UnauthorizedException('Kakao token authentication failed.');
     }
   }
 
@@ -181,7 +181,7 @@ export class AuthService {
     const email: string = userInfo?.kakao_account?.email;
 
     if (!email) {
-      throw new BadRequestException('카카오 회원의 이메일 정보가 없습니다.');
+      throw new BadRequestException('Kakao user email information is missing.');
     }
 
     const user = await this.userService.create({ email }, true);
@@ -206,7 +206,7 @@ export class AuthService {
       const { sub, email, name, picture } = response.data;
       return { sub, email, name, picture };
     } catch {
-      throw new UnauthorizedException('구글 토큰 인증에 실패했습니다.');
+      throw new UnauthorizedException('Google token authentication failed.');
     }
   }
 
@@ -269,7 +269,7 @@ export class AuthService {
       const decoded = jwt.decode(appleToken, { complete: true });
 
       if (!decoded || typeof decoded === 'string') {
-        throw new UnauthorizedException('Apple 토큰 포맷이 잘못됐습니다.');
+        throw new UnauthorizedException('Invalid Apple token format.');
       }
 
       const { kid, alg } = decoded.header;
@@ -294,7 +294,7 @@ export class AuthService {
       };
     } catch (e) {
       console.error('🔴 Apple Token Verification Failed:', e);
-      throw new UnauthorizedException('애플 토큰 인증에 실패했습니다.');
+      throw new UnauthorizedException('Apple token authentication failed.');
     }
   }
 
@@ -339,7 +339,7 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException('존재하지 않는 사용자입니다!');
+      throw new NotFoundException('User not found!');
     }
 
     await this.dataSource.transaction(async (manager) => {

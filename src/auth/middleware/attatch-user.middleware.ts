@@ -29,7 +29,7 @@ export class AttatchUserMiddleware implements NestMiddleware {
       const decodedPayload = this.jwtService.decode(token);
 
       if (decodedPayload.type !== 'access') {
-        throw new UnauthorizedException('잘못된 토큰입니다!');
+        throw new UnauthorizedException('Invalid token!');
       }
 
       const payload = await this.jwtService.verifyAsync(token, {
@@ -41,7 +41,7 @@ export class AttatchUserMiddleware implements NestMiddleware {
       next();
     } catch (e) {
       if (e.name === 'TokenExpiredError') {
-        throw new UnauthorizedException('토큰이 만료되었습니다.');
+        throw new UnauthorizedException('Token has expired.');
       }
       next();
     }
@@ -51,12 +51,12 @@ export class AttatchUserMiddleware implements NestMiddleware {
     const basicSplit = rawToken.split(' ');
 
     if (basicSplit.length !== 2) {
-      throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+      throw new BadRequestException('Invalid token format!');
     }
 
     const [bearer, token] = basicSplit;
     if (bearer.toLocaleLowerCase() !== 'bearer') {
-      throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+      throw new BadRequestException('Invalid token format!');
     }
 
     return token;

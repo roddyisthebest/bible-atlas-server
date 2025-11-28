@@ -32,7 +32,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (user) {
-      throw new BadRequestException('이미 가입된 계정입니다.');
+      throw new BadRequestException('Account already exists.');
     }
 
     if (isSns) {
@@ -44,7 +44,7 @@ export class UserService {
     const haveNoPassword = !password;
 
     if (haveNoPassword) {
-      throw new BadRequestException('비밀번호를 입력해주세요.');
+      throw new BadRequestException('Please enter a password.');
     }
 
     const hash = await bcrypt.hash(
@@ -67,7 +67,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException('존재하지 않는 사용자입니다!');
+      throw new NotFoundException('User not found!');
     }
 
     return user;
@@ -77,7 +77,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException('존재하지 않는 사용자입니다!');
+      throw new NotFoundException('User not found!');
     }
 
     await this.userRepository.delete({ id });
