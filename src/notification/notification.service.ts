@@ -48,7 +48,7 @@ export class NotificationService {
     });
 
     if (!notification) {
-      throw new NotFoundException('존재하지 않는 id값의 알림입니다.');
+      throw new NotFoundException('Notification with this ID does not exist.');
     }
 
     return notification;
@@ -60,7 +60,7 @@ export class NotificationService {
     });
 
     if (!notification) {
-      throw new NotFoundException('존재하지 않는 id값의 알림입니다.');
+      throw new NotFoundException('Notification with this ID does not exist.');
     }
 
     await this.notificationRepository.delete({ id });

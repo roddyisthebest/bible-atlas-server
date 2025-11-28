@@ -29,7 +29,7 @@ export class PlaceReportService {
     });
 
     if (!place) {
-      throw new NotFoundException('존재하지 않은 장소입니다.');
+      throw new NotFoundException('Place does not exist.');
     }
 
     const reportData: any = {
@@ -72,7 +72,7 @@ export class PlaceReportService {
     });
 
     if (!placeReport) {
-      throw new NotFoundException('존재하지 않는 장소 리포트입니다.');
+      throw new NotFoundException('Place report does not exist.');
     }
 
     return placeReport;
@@ -84,7 +84,7 @@ export class PlaceReportService {
     });
 
     if (!place) {
-      throw new NotFoundException('존재하지 않은 장소입니다.');
+      throw new NotFoundException('Place does not exist.');
     }
 
     await this.findOne(id);

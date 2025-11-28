@@ -31,7 +31,7 @@ export class ProposalService {
     const isCreate = type === 0;
 
     if (isCreate && placeId) {
-      throw new BadRequestException('생성 제안은 장소 정보가 필요 없습니다.');
+      throw new BadRequestException('Creation proposal does not require place information.');
     }
 
     if (placeId) {
@@ -40,7 +40,7 @@ export class ProposalService {
       });
 
       if (!place) {
-        throw new BadRequestException('존재하지 않은 장소입니다.');
+        throw new BadRequestException('Place does not exist.');
       }
       const { id: newProposalId } = await this.proposalRepository.save({
         comment,
@@ -95,7 +95,7 @@ export class ProposalService {
     });
 
     if (!proposal) {
-      throw new NotFoundException('존재하지 않은 제안입니다.');
+      throw new NotFoundException('Proposal does not exist.');
     }
 
     return proposal;
@@ -112,19 +112,19 @@ export class ProposalService {
     });
 
     if (!proposal) {
-      throw new NotFoundException('존재하지 않은 제안입니다.');
+      throw new NotFoundException('Proposal does not exist.');
     }
 
     const isCreator = proposal.creator.id === userId;
 
     if (!isCreator) {
-      throw new UnauthorizedException('권한이 없습니다.');
+      throw new UnauthorizedException('Access denied.');
     }
 
     const isCreate = updateProposalDto.type === 0;
 
     if (isCreate && updateProposalDto.placeId) {
-      throw new BadRequestException('생성 제안은 장소 정보가 필요 없습니다.');
+      throw new BadRequestException('Creation proposal does not require place information.');
     }
 
     if (updateProposalDto.placeId) {
@@ -133,7 +133,7 @@ export class ProposalService {
       });
 
       if (!place) {
-        throw new BadRequestException('존재하지 않은 장소입니다.');
+        throw new BadRequestException('Place does not exist.');
       }
 
       const { placeId, ...rest } = updateProposalDto;
@@ -164,13 +164,13 @@ export class ProposalService {
     });
 
     if (!proposal) {
-      throw new NotFoundException('존재하지 않은 제안입니다.');
+      throw new NotFoundException('Proposal does not exist.');
     }
 
     const isCreator = proposal.creator.id === userId;
 
     if (!isCreator) {
-      throw new UnauthorizedException('권한이 없습니다.');
+      throw new UnauthorizedException('Access denied.');
     }
 
     await this.proposalRepository.delete({ id });

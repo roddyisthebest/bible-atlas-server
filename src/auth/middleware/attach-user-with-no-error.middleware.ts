@@ -47,12 +47,12 @@ export class AttatchUserWithNoErrorMiddleware implements NestMiddleware {
     const basicSplit = rawToken.split(' ');
 
     if (basicSplit.length !== 2) {
-      throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+      throw new BadRequestException('Invalid token format!');
     }
 
     const [bearer, token] = basicSplit;
     if (bearer.toLocaleLowerCase() !== 'bearer') {
-      throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+      throw new BadRequestException('Invalid token format!');
     }
 
     return token;

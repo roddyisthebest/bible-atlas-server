@@ -85,9 +85,7 @@ export class PlaceService {
       const hasInvalidIds = placeTypes.length !== typeIds.length;
 
       if (hasInvalidIds) {
-        throw new BadRequestException(
-          '유효하지 않은 PlaceType ID가 포함되어 있습니다.',
-        );
+        throw new BadRequestException('Invalid PlaceType ID included.');
       }
 
       const place = await manager.save(Place, { ...rest });
@@ -152,33 +150,40 @@ export class PlaceService {
     }
 
     if (bibleBook) {
-      qb.andWhere(`place.verse ILIKE :bibleBook`, {
-        bibleBook: `%${bibleBook}%`,
-      });
+      const bibleBookKey = Object.keys(BibleBook).find(
+        (bibleBookKey) =>
+          BibleBook[bibleBookKey as keyof typeof BibleBook] === bibleBook,
+      );
 
-      // 해당 성경의 첫 번째 구절을 찾아서 정렬
-      qb.addSelect(
-        `
-        CASE 
-          WHEN POSITION('${bibleBook}.' IN place.verse) > 0 THEN
-            CAST(SPLIT_PART(SPLIT_PART(SUBSTRING(place.verse FROM POSITION('${bibleBook}.' IN place.verse)), '.', 2), ',', 1) AS INTEGER)
-          ELSE 999
-        END
-        `,
-        'chapter',
-      )
-        .addSelect(
+      if (bibleBookKey) {
+        qb.andWhere(`place.verse ILIKE :bibleBook`, {
+          bibleBook: `%${bibleBookKey}%`,
+        });
+
+        // 해당 성경의 첫 번째 구절을 찾아서 정렬
+        qb.addSelect(
           `
-        CASE 
-          WHEN POSITION('${bibleBook}.' IN place.verse) > 0 THEN
-            CAST(SPLIT_PART(SPLIT_PART(SUBSTRING(place.verse FROM POSITION('${bibleBook}.' IN place.verse)), '.', 3), ',', 1) AS INTEGER)
-          ELSE 999
-        END
-        `,
-          'verse_num',
+          CASE 
+            WHEN POSITION('${bibleBookKey}.' IN place.verse) > 0 THEN
+              CAST(SPLIT_PART(SPLIT_PART(SUBSTRING(place.verse FROM POSITION('${bibleBook}.' IN place.verse)), '.', 2), ',', 1) AS INTEGER)
+            ELSE 999
+          END
+          `,
+          'chapter',
         )
-        .orderBy('chapter', 'ASC')
-        .addOrderBy('verse_num', 'ASC');
+          .addSelect(
+            `
+          CASE 
+            WHEN POSITION('${bibleBookKey}.' IN place.verse) > 0 THEN
+              CAST(SPLIT_PART(SPLIT_PART(SUBSTRING(place.verse FROM POSITION('${bibleBook}.' IN place.verse)), '.', 3), ',', 1) AS INTEGER)
+            ELSE 999
+          END
+          `,
+            'verse_num',
+          )
+          .orderBy('chapter', 'ASC')
+          .addOrderBy('verse_num', 'ASC');
+      }
     } else if (sort) {
       if (sort === PlaceSort.like) {
         qb.andWhere('place.likeCount > 0');
@@ -491,7 +496,7 @@ export class PlaceService {
     });
 
     if (!place) {
-      throw new NotFoundException('불명확한 place id 입니다.');
+      throw new NotFoundException('Invalid place ID.');
     }
 
     const isExist = await this.userPlaceLikeRepository.findOne({
@@ -522,7 +527,7 @@ export class PlaceService {
     });
 
     if (!place) {
-      throw new NotFoundException('불명확한 place id 입니다.');
+      throw new NotFoundException('Invalid place ID.');
     }
 
     const isExist = await this.userPlaceSaveRepository.findOne({
@@ -557,7 +562,7 @@ export class PlaceService {
     });
 
     if (!place) {
-      throw new NotFoundException('불명확한 place id 입니다.');
+      throw new NotFoundException('Invalid place ID.');
     }
 
     const isExist = await this.userPlaceMemoRepository.findOne({
@@ -592,7 +597,7 @@ export class PlaceService {
     });
 
     if (!place) {
-      throw new NotFoundException('불명확한 place id 입니다.');
+      throw new NotFoundException('Invalid place ID.');
     }
 
     const isExist = await this.userPlaceMemoRepository.findOne({
@@ -603,7 +608,7 @@ export class PlaceService {
     });
 
     if (!isExist) {
-      throw new NotFoundException('memo가 존재하지 않습니다.');
+      throw new NotFoundException('Memo does not exist.');
     }
 
     await this.userPlaceMemoRepository.remove(isExist);
@@ -623,7 +628,7 @@ export class PlaceService {
       );
       geojsonObject = response.data;
     } catch (e) {
-      throw new NotFoundException('해당 장소의 GeoJSON이 존재하지 않습니다.');
+      throw new NotFoundException('GeoJSON for this place does not exist.');
     }
 
     // 장소 정보 조회
@@ -638,7 +643,7 @@ export class PlaceService {
     });
 
     if (!place) {
-      throw new NotFoundException('존재하지 않는 장소입니다.');
+      throw new NotFoundException('Place does not exist.');
     }
 
     if (place.childRelations.length > 0 || place.parentRelations.length > 0) {
@@ -982,7 +987,7 @@ export class PlaceService {
           'utf-8',
         );
       } catch (error) {
-        throw new ConflictException('파일 저장 에러입니다.', error);
+        throw new ConflictException('File save error.', error);
       }
 
       return {
@@ -992,7 +997,7 @@ export class PlaceService {
       };
     } catch (error) {
       this.logger.error('❌ Failed to scrap places from web', error);
-      throw new ConflictException('에러!', error);
+      throw new ConflictException('Error!', error);
     }
   }
 
@@ -1044,20 +1049,22 @@ export class PlaceService {
 
       // 1. 메모리에서 바로 파일 읽기 및 파싱
       const parsedFiles: AiPlaceFile[] = [];
-      
+
       for (const entry of jsonEntries) {
         try {
           let content = entry.getData().toString('utf8');
           console.log(`Processing file: ${entry.entryName}`);
-          
+
           // HTML 엔티티 디코딩
           content = decodeHtmlEntities(content);
-          
+
           const parsed = JSON.parse(content);
           parsedFiles.push(parsed);
         } catch (parseError) {
           console.error(`Failed to parse ${entry.entryName}:`, parseError);
-          throw new Error(`Invalid JSON in file ${entry.entryName}: ${parseError.message}`);
+          throw new Error(
+            `Invalid JSON in file ${entry.entryName}: ${parseError.message}`,
+          );
         }
       }
 
@@ -1177,9 +1184,12 @@ export class PlaceService {
       });
     } catch (e) {
       console.log(e);
-      throw new InternalServerErrorException('처리 중 오류 발생', {
-        cause: e,
-      });
+      throw new InternalServerErrorException(
+        'Error occurred during processing',
+        {
+          cause: e,
+        },
+      );
     }
   }
 
@@ -1197,8 +1207,8 @@ export class PlaceService {
       const newPlacesFiles = await fs.readdir(newPlacesDir);
       const lightNewPlacesFiles = await fs.readdir(lightNewPlacesDir);
 
-      console.log('new-places-data 파일들:', newPlacesFiles);
-      console.log('light-new-places-data 파일들:', lightNewPlacesFiles);
+      console.log('new-places-data files:', newPlacesFiles);
+      console.log('light-new-places-data files:', lightNewPlacesFiles);
 
       const pageGroups = new Map<
         string,
@@ -1209,7 +1219,7 @@ export class PlaceService {
         const pageMatch = file.match(/page[=\-_](\d+)/) || file.match(/(\d+)/);
         if (pageMatch) {
           const page = pageMatch[1];
-          console.log(`new-places-data 파일 ${file} -> 페이지 ${page}`);
+          console.log(`new-places-data file ${file} -> page ${page}`);
           if (!pageGroups.has(page)) pageGroups.set(page, {});
           pageGroups.get(page)!.newFile = file;
         }
@@ -1219,19 +1229,19 @@ export class PlaceService {
         const pageMatch = file.match(/page[=\-_](\d+)/) || file.match(/(\d+)/);
         if (pageMatch) {
           const page = pageMatch[1];
-          console.log(`light-new-places-data 파일 ${file} -> 페이지 ${page}`);
+          console.log(`light-new-places-data file ${file} -> page ${page}`);
           if (!pageGroups.has(page)) pageGroups.set(page, {});
           pageGroups.get(page)!.lightFile = file;
         }
       });
 
-      console.log('페이지 그룹:', Array.from(pageGroups.entries()));
+      console.log('page groups:', Array.from(pageGroups.entries()));
 
       for (const [page, files] of pageGroups) {
-        console.log(`페이지 ${page} 처리 중:`, files);
+        console.log(`processing page ${page}:`, files);
         if (!files.newFile || !files.lightFile) {
           console.log(
-            `페이지 ${page} 스킵: newFile=${files.newFile}, lightFile=${files.lightFile}`,
+            `skipping page ${page}: newFile=${files.newFile}, lightFile=${files.lightFile}`,
           );
           continue;
         }
@@ -1266,16 +1276,16 @@ export class PlaceService {
           JSON.stringify(result),
           'utf-8',
         );
-        console.log(`저장 완료: ${outputFile}`);
+        console.log(`saved: ${outputFile}`);
       }
 
       return {
         status: 200,
-        message: `📌 ${pageGroups.size}개 페이지 데이터 병합 완료`,
+        message: `📌 ${pageGroups.size} page data merge completed`,
       };
     } catch (error) {
-      console.error('병합 오류:', error);
-      throw new ConflictException('데이터 병합 중 오류 발생', error);
+      console.error('merge error:', error);
+      throw new ConflictException('Error occurred during data merging', error);
     }
   }
 

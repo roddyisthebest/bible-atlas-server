@@ -24,7 +24,7 @@ export class PlaceTypeService {
     });
 
     if (placeType) {
-      throw new BadRequestException('이미 등록된 장소 타입입니다.');
+      throw new BadRequestException('Place type already registered.');
     }
 
     const newPlaceType = await this.placeTypeRepository.save({ name });
@@ -75,7 +75,7 @@ export class PlaceTypeService {
     const placeType = await this.placeTypeRepository.findOne({ where: { id } });
 
     if (!placeType) {
-      throw new BadRequestException('등록된 장소 타입이 아닙니다.');
+      throw new BadRequestException('Not a registered place type.');
     }
 
     return placeType;
@@ -90,7 +90,7 @@ export class PlaceTypeService {
 
     if (isNameUnchanged) {
       throw new BadRequestException(
-        '기존과 동일한 이름으로는 변경할 수 없습니다.',
+        'Cannot change to the same name as existing.',
       );
     }
 
@@ -102,7 +102,7 @@ export class PlaceTypeService {
     });
 
     if (duplicatedPlaceType) {
-      throw new BadRequestException('중복된 이름의 장소 타입이 존재합니다.');
+      throw new BadRequestException('Place type with duplicate name exists.');
     }
 
     await this.placeTypeRepository.update({ id }, { ...updatePlaceTypeDto });
