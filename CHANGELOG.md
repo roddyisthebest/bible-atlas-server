@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.1.0](https://github.com/roddyisthebest/bible-atlas-server/compare/v1.0.0...v1.1.0) (2025-11-28)
+
+
+### Features
+
+* add additional place types to enum ([9e8cb7f](https://github.com/roddyisthebest/bible-atlas-server/commit/9e8cb7f40ac8048775420eb8b88ee834e7e39698))
+* add general report system for user feedback ([c6229f5](https://github.com/roddyisthebest/bible-atlas-server/commit/c6229f5c76dafac0b47aaced9cfe296f6f45e6e6))
+* change place logic ([f5a96ef](https://github.com/roddyisthebest/bible-atlas-server/commit/f5a96ef9c84be5944fee86af0c1a407ef49b3586))
+* Improve bibleBook search to use enum keys instead of values ([7bbbf23](https://github.com/roddyisthebest/bible-atlas-server/commit/7bbbf2387c8f5d80b7f1383070cfac29524f600f))
+* Replace all Korean error messages with English ([ff33114](https://github.com/roddyisthebest/bible-atlas-server/commit/ff331149f90d878ea6792cda12a3c87ee5808aa4))
+* setup TypeORM migration system with tsconfig-paths ([3154398](https://github.com/roddyisthebest/bible-atlas-server/commit/3154398d4db50162e5e5bfd991ec8821e64f2237))
+* update ai-places-data with enhanced scraping and data merging ([a7aa20e](https://github.com/roddyisthebest/bible-atlas-server/commit/a7aa20e00639cc9cf654cb36775679c141cbe5a7))
+* update place entity and place type enum ([ab3a7f5](https://github.com/roddyisthebest/bible-atlas-server/commit/ab3a7f5201bbf2bf868e70dafd69e1ba9857d4de))
+
+
+### Bug Fixes
+
+* delete migrations files ([6c4766a](https://github.com/roddyisthebest/bible-atlas-server/commit/6c4766ad772ae97dfacbc2d4312bc3d2909571ab))
+
 ## 1.0.0 (2025-10-27)
 
 
