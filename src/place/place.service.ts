@@ -85,9 +85,7 @@ export class PlaceService {
       const hasInvalidIds = placeTypes.length !== typeIds.length;
 
       if (hasInvalidIds) {
-        throw new BadRequestException(
-          'Invalid PlaceType ID included.',
-        );
+        throw new BadRequestException('Invalid PlaceType ID included.');
       }
 
       const place = await manager.save(Place, { ...rest });
@@ -152,33 +150,40 @@ export class PlaceService {
     }
 
     if (bibleBook) {
-      qb.andWhere(`place.verse ILIKE :bibleBook`, {
-        bibleBook: `%${bibleBook}%`,
-      });
+      const bibleBookKey = Object.keys(BibleBook).find(
+        (bibleBookKey) =>
+          BibleBook[bibleBookKey as keyof typeof BibleBook] === bibleBook,
+      );
 
-      // 해당 성경의 첫 번째 구절을 찾아서 정렬
-      qb.addSelect(
-        `
-        CASE 
-          WHEN POSITION('${bibleBook}.' IN place.verse) > 0 THEN
-            CAST(SPLIT_PART(SPLIT_PART(SUBSTRING(place.verse FROM POSITION('${bibleBook}.' IN place.verse)), '.', 2), ',', 1) AS INTEGER)
-          ELSE 999
-        END
-        `,
-        'chapter',
-      )
-        .addSelect(
+      if (bibleBookKey) {
+        qb.andWhere(`place.verse ILIKE :bibleBook`, {
+          bibleBook: `%${bibleBookKey}%`,
+        });
+
+        // 해당 성경의 첫 번째 구절을 찾아서 정렬
+        qb.addSelect(
           `
-        CASE 
-          WHEN POSITION('${bibleBook}.' IN place.verse) > 0 THEN
-            CAST(SPLIT_PART(SPLIT_PART(SUBSTRING(place.verse FROM POSITION('${bibleBook}.' IN place.verse)), '.', 3), ',', 1) AS INTEGER)
-          ELSE 999
-        END
-        `,
-          'verse_num',
+          CASE 
+            WHEN POSITION('${bibleBookKey}.' IN place.verse) > 0 THEN
+              CAST(SPLIT_PART(SPLIT_PART(SUBSTRING(place.verse FROM POSITION('${bibleBook}.' IN place.verse)), '.', 2), ',', 1) AS INTEGER)
+            ELSE 999
+          END
+          `,
+          'chapter',
         )
-        .orderBy('chapter', 'ASC')
-        .addOrderBy('verse_num', 'ASC');
+          .addSelect(
+            `
+          CASE 
+            WHEN POSITION('${bibleBookKey}.' IN place.verse) > 0 THEN
+              CAST(SPLIT_PART(SPLIT_PART(SUBSTRING(place.verse FROM POSITION('${bibleBook}.' IN place.verse)), '.', 3), ',', 1) AS INTEGER)
+            ELSE 999
+          END
+          `,
+            'verse_num',
+          )
+          .orderBy('chapter', 'ASC')
+          .addOrderBy('verse_num', 'ASC');
+      }
     } else if (sort) {
       if (sort === PlaceSort.like) {
         qb.andWhere('place.likeCount > 0');
@@ -1044,20 +1049,22 @@ export class PlaceService {
 
       // 1. 메모리에서 바로 파일 읽기 및 파싱
       const parsedFiles: AiPlaceFile[] = [];
-      
+
       for (const entry of jsonEntries) {
         try {
           let content = entry.getData().toString('utf8');
           console.log(`Processing file: ${entry.entryName}`);
-          
+
           // HTML 엔티티 디코딩
           content = decodeHtmlEntities(content);
-          
+
           const parsed = JSON.parse(content);
           parsedFiles.push(parsed);
         } catch (parseError) {
           console.error(`Failed to parse ${entry.entryName}:`, parseError);
-          throw new Error(`Invalid JSON in file ${entry.entryName}: ${parseError.message}`);
+          throw new Error(
+            `Invalid JSON in file ${entry.entryName}: ${parseError.message}`,
+          );
         }
       }
 
@@ -1177,9 +1184,12 @@ export class PlaceService {
       });
     } catch (e) {
       console.log(e);
-      throw new InternalServerErrorException('Error occurred during processing', {
-        cause: e,
-      });
+      throw new InternalServerErrorException(
+        'Error occurred during processing',
+        {
+          cause: e,
+        },
+      );
     }
   }
 
